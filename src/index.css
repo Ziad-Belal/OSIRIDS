@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pharoic-gold: #D4AF37;
+  --pharoic-blue: #002366;
+  --pharoic-black: #0A0A0A;
+  --pharoic-sand: #F4E1D2;
+}
+
+@layer base {
+  body {
+    @apply bg-pharoic-black text-white font-sans selection:bg-pharoic-gold/30;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-2 bg-pharoic-gold text-pharoic-black font-semibold hover:bg-pharoic-gold/90 transition-colors duration-200;
+  }
+  
+  .btn-outline {
+    @apply px-6 py-2 border border-pharoic-gold text-pharoic-gold font-semibold hover:bg-pharoic-gold hover:text-pharoic-black transition-all duration-200;
+  }
+}
