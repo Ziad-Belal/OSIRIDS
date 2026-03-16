@@ -1,6 +1,6 @@
 import { ShoppingBag, ArrowRight, Trash2, Plus, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useCart } from 'C:/Users/Ziad/OneDrive/Documents/OSIRIDS/src/context/CartContext.tsx';
+import { useCart } from '../context/CartContext.tsx';
 
 const Cart = () => {
   const { cartItems, removeFromCart, updateQuantity, subtotal } = useCart();
