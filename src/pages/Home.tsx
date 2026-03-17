@@ -1,35 +1,76 @@
+import { useState, useEffect } from 'react';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+
+interface ContentItem {
+  id: string;
+  page: string;
+  section: string;
+  content: string;
+  image_url?: string;
+}
 
 const Home = () => {
+  const [content, setContent] = useState<Record<string, ContentItem>>({});
+
+  useEffect(() => {
+    fetchContent();
+  }, []);
+
+  const fetchContent = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('content')
+        .select('*')
+        .eq('page', 'home');
+
+      if (error) throw error;
+      const contentMap = (data || []).reduce((acc: Record<string, ContentItem>, item: ContentItem) => {
+        acc[item.section] = item;
+        return acc;
+      }, {} as Record<string, ContentItem>);
+      setContent(contentMap);
+    } catch (err) {
+      console.error('Error fetching content:', err);
+    }
+  };
+
+  const getContent = (section: string, defaultValue: string = '') => {
+    return content[section]?.content || defaultValue;
+  };
+
+  const getImage = (section: string, defaultValue: string = '') => {
+    return content[section]?.image_url || defaultValue;
+  };
   return (
     <div className="space-y-24">
       {/* Hero Section */}
       <section className="relative h-[85vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-pharoic-black/20 via-pharoic-black/60 to-pharoic-black z-10" />
-          <img 
-            src="https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=2080&auto=format&fit=crop" 
-            alt="Hero Fashion" 
+          <img
+            src={getImage('hero_image', "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=2080&auto=format&fit=crop")}
+            alt="Hero Fashion"
             className="w-full h-full object-cover scale-110 animate-pulse-slow"
           />
         </div>
 
         <div className="relative z-20 text-center max-w-4xl px-4 space-y-8">
           <h1 className="text-6xl md:text-8xl font-serif font-bold tracking-tight text-white leading-tight">
-            LEGACY OF <br />
-            <span className="text-pharoic-gold italic">THE ANCIENTS</span>
+            {getContent('hero_title', 'LEGACY OF')} <br />
+            <span className="text-pharoic-gold italic">{getContent('hero_subtitle', 'THE ANCIENTS')}</span>
           </h1>
           <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto font-light leading-relaxed">
-            Modern aesthetics meets timeless heritage. Discover our pharoic-inspired collection crafted for the bold.
+            {getContent('hero_description', 'Modern aesthetics meets timeless heritage. Discover our pharoic-inspired collection crafted for the bold.')}
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center pt-8">
             <Link to="/products" className="btn-primary flex items-center gap-2 group">
-              SHOP COLLECTION
+              {getContent('hero_button1', 'SHOP COLLECTION')}
               <ShoppingBag size={18} className="group-hover:translate-y-[-2px] transition-transform" />
             </Link>
             <Link to="/about" className="btn-outline flex items-center gap-2 group">
-              EXPLORE STORY
+              {getContent('hero_button2', 'EXPLORE STORY')}
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -56,8 +97,8 @@ const Home = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[1, 2, 3].map((item) => (
             <div key={item} className="group relative aspect-[3/4] overflow-hidden bg-zinc-900 cursor-pointer">
-              <img 
-                src={`https://images.unsplash.com/photo-${item === 1 ? '1523381235312-d87f73099fd1' : item === 2 ? '1539106397933-7bb303553229' : '1554412933-514a83d2f3c8'}?q=80&w=1000&auto=format&fit=crop`} 
+              <img
+                src={`https://images.unsplash.com/photo-${item === 1 ? '1523381235312-d87f73099fd1' : item === 2 ? '1539106397933-7bb303553229' : '1554412933-514a83d2f3c8'}?q=80&w=1000&auto=format&fit=crop`}
                 alt={`Collection ${item}`}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
               />
@@ -95,9 +136,9 @@ const Home = () => {
           </div>
           <div className="relative aspect-square">
             <div className="absolute -inset-4 border border-pharoic-gold/20 -z-10 animate-spin-slow" />
-            <img 
-              src="https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=2070&auto=format&fit=crop" 
-              alt="Brand Story" 
+            <img
+              src="https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=2070&auto=format&fit=crop"
+              alt="Brand Story"
               className="w-full h-full object-cover grayscale brightness-75"
             />
           </div>

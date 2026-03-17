@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Menu, X } from 'lucide-react';
+import { ShoppingCart, Menu, X } from 'lucide-react';
 import { useCart } from '../context/CartContext.tsx';
 
 const Navbar = () => {
@@ -13,10 +13,7 @@ const Navbar = () => {
     <nav className="border-b border-white/10 bg-pharoic-black/50 backdrop-blur-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <img src="/o.png" alt="Osirids Logo" className="w-10 h-10 object-contain" />
-          <span className="text-2xl font-serif font-bold tracking-widest text-pharoic-gold uppercase">
-            Osirids
-          </span>
+          <img src="/o.png" alt="Osirids Logo" className="w-16 h-16 object-contain" />
         </Link>
 
         {/* Desktop Menu */}
@@ -33,9 +30,6 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-4 md:gap-6">
-          <Link to="/admin" className="p-2 hover:bg-white/5 rounded-full transition-colors">
-            <User size={20} />
-          </Link>
           <Link to="/cart" className="p-2 hover:bg-white/5 rounded-full transition-colors relative">
             <ShoppingCart size={20} />
             {totalItems > 0 && (
