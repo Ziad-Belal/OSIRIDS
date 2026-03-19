@@ -1,110 +1,104 @@
 import { useState, useEffect } from 'react';
+import { ShoppingBag } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { ShoppingBag, Filter, LayoutGrid, List } from 'lucide-react';
 import { useCart, Product } from '../context/CartContext';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [loading, setLoading]   = useState(true);
+  const [added, setAdded]       = useState<string | null>(null);
   const { addToCart } = useCart();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        if (!supabase) throw new Error('Supabase client not initialized');
-        
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setProducts(data || []);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-      } finally {
+    supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setProducts((data as Product[]) || []);
         setLoading(false);
-      }
-    };
-
-    fetchProducts();
+      });
   }, []);
 
+  const handleAdd = (product: Product) => {
+    addToCart(product);
+    setAdded(product.id);
+    setTimeout(() => setAdded(null), 1500);
+  };
+
   return (
-    <div className="space-y-12 py-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div className="space-y-4">
-          <p className="text-pharoic-gold text-sm font-bold tracking-[0.3em] uppercase">Collections</p>
-          <h1 className="text-5xl font-serif font-bold text-white tracking-tight">EXPLORE THE LINEUP</h1>
-        </div>
-        <div className="flex items-center gap-6 w-full md:w-auto border-b border-white/10 pb-4 md:border-0 md:pb-0">
-          <div className="flex items-center gap-2 text-white/40 hover:text-pharoic-gold cursor-pointer transition-colors group">
-            <Filter size={18} />
-            <span className="text-sm font-medium">FILTER</span>
-          </div>
-          <div className="h-6 w-px bg-white/10 mx-2" />
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 transition-colors ${viewMode === 'grid' ? 'text-pharoic-gold bg-white/5' : 'text-white/40 hover:text-white'}`}
-            >
-              <LayoutGrid size={20} />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 transition-colors ${viewMode === 'list' ? 'text-pharoic-gold bg-white/5' : 'text-white/40 hover:text-white'}`}
-            >
-              <List size={20} />
-            </button>
-          </div>
-        </div>
+    <div className="py-10 space-y-10">
+
+      {/* Minimal header */}
+      <div className="text-center space-y-3 animate-fade-up">
+        <p className="text-pharoic-gold text-[10px] font-bold tracking-[0.5em] uppercase">The Collection</p>
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-white tracking-tight">
+          OSIRIDS
+        </h1>
+        <div className="w-12 h-px bg-pharoic-gold mx-auto" />
       </div>
 
-      {/* Product Grid */}
+      {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="aspect-[3/4] bg-white/5 animate-pulse rounded-lg" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="aspect-[3/4] bg-white/5 animate-pulse rounded-sm" />
           ))}
         </div>
       ) : products.length === 0 ? (
-        <div className="text-center py-24 space-y-4">
-          <p className="text-white/40 text-lg">No products found in our collection yet.</p>
-          <button className="btn-primary" onClick={() => window.location.reload()}>RETRY FETCHING</button>
+        <div className="text-center py-32 space-y-4 animate-fade-in">
+          <div className="text-6xl opacity-10">𓃭</div>
+          <p className="text-white/30 text-sm tracking-widest uppercase">No products yet</p>
+          <p className="text-white/20 text-xs">Add products from the Admin panel</p>
         </div>
       ) : (
-        <div className={viewMode === 'grid'
-          ? "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12"
-          : "flex flex-col gap-8"
-        }>
-          {products.map((product) => (
-            <div key={product.id} className="group relative flex flex-col space-y-4 cursor-pointer">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10 animate-fade-up delay-200">
+          {products.map((product, i) => (
+            <div
+              key={product.id}
+              className="group flex flex-col gap-3 cursor-pointer animate-fade-up"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              {/* Image */}
               <div className="aspect-[3/4] overflow-hidden bg-zinc-900 relative rounded-sm">
                 <img
-                  src={product.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000&auto=format&fit=crop'}
+                  src={product.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800'}
                   alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 grayscale-[20%] group-hover:grayscale-0"
                 />
+                {/* Add to cart overlay */}
                 <button
-                  onClick={() => addToCart(product)}
-                  className="absolute bottom-4 left-4 right-4 bg-pharoic-gold text-pharoic-black font-bold py-3 text-xs opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2"
+                  onClick={() => handleAdd(product)}
+                  className={`
+                    absolute bottom-0 left-0 right-0 py-3 text-xs font-bold tracking-[0.2em] uppercase
+                    flex items-center justify-center gap-2
+                    transition-all duration-300
+                    ${added === product.id
+                      ? 'bg-white text-pharoic-black opacity-100 translate-y-0'
+                      : 'bg-pharoic-gold text-pharoic-black opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
+                    }
+                  `}
                 >
-                  <ShoppingBag size={14} /> ADD TO CART
+                  {added === product.id
+                    ? <>✓ ADDED</>
+                    : <><ShoppingBag size={13} /> ADD TO CART</>
+                  }
                 </button>
               </div>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-serif font-bold text-white tracking-wide uppercase">{product.name}</h3>
-                  <p className="text-white/40 text-xs font-medium uppercase tracking-widest">{product.category}</p>
+
+              {/* Info */}
+              <div className="flex justify-between items-start px-0.5">
+                <div className="space-y-0.5 flex-1 min-w-0">
+                  <h3 className="text-sm font-serif font-bold text-white tracking-wide uppercase truncate">{product.name}</h3>
+                  <p className="text-white/30 text-[10px] font-medium uppercase tracking-widest">{product.category}</p>
                 </div>
-                <p className="text-pharoic-gold font-bold text-lg">${product.price}</p>
+                <p className="text-pharoic-gold font-bold text-sm flex-shrink-0 ml-2">${product.price}</p>
               </div>
             </div>
           ))}
         </div>
       )}
+
     </div>
   );
 };

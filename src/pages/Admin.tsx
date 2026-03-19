@@ -1,608 +1,570 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Trash2, Edit2, Package, LayoutDashboard, Settings, LogIn, Save, X, Image, FileText, Upload } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
+import {
+  Plus, Trash2, Edit2, Package, LayoutDashboard,
+  Settings, Save, X, Image, FileText, Upload,
+  Palette, Layout, RefreshCw, Eye, LogOut,
+} from 'lucide-react';
 
 interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  image_url: string;
-  category: string;
+  id: string; name: string; price: number;
+  description: string; image_url: string; category: string;
 }
-
 interface Content {
-  id: string;
-  page: string;
-  section: string;
-  content: string;
-  image_url?: string;
+  id: string; page: string; section: string; content: string; image_url?: string;
+}
+interface ImageFile {
+  id: string; name: string; url: string;
 }
 
-interface ImageFile {
-  id: string;
-  name: string;
-  url: string;
-  uploaded_at: string;
-}
+const TABS = [
+  { id: 'overview', label: 'OVERVIEW', Icon: LayoutDashboard },
+  { id: 'products', label: 'PRODUCTS', Icon: Package },
+  { id: 'content', label: 'CONTENT', Icon: FileText },
+  { id: 'layout', label: 'LAYOUT', Icon: Layout },
+  { id: 'images', label: 'IMAGES', Icon: Image },
+  { id: 'design', label: 'DESIGN', Icon: Palette },
+  { id: 'settings', label: 'SETTINGS', Icon: Settings },
+];
+
+const SECTION_PRESETS: Record<string, { section: string; label: string; type: 'text' | 'image' }[]> = {
+  home: [
+    { section: 'hero_title', label: 'Hero Title', type: 'text' },
+    { section: 'hero_subtitle', label: 'Hero Subtitle', type: 'text' },
+    { section: 'hero_description', label: 'Hero Description', type: 'text' },
+    { section: 'hero_button1', label: 'Button 1 Text', type: 'text' },
+    { section: 'hero_button2', label: 'Button 2 Text', type: 'text' },
+    { section: 'hero_image', label: 'Hero Background Img', type: 'image' },
+    { section: 'brand_image', label: 'Brand Section Img', type: 'image' },
+  ],
+  about: [
+    { section: 'origin_label', label: 'Origin Label', type: 'text' },
+    { section: 'origin_title', label: 'Origin Title', type: 'text' },
+    { section: 'origin_subtitle', label: 'Origin Subtitle', type: 'text' },
+    { section: 'origin_description', label: 'Origin Description', type: 'text' },
+    { section: 'origin_image', label: 'Origin Image', type: 'image' },
+    { section: 'philosophy_title', label: 'Philosophy Title', type: 'text' },
+    { section: 'philosophy_quote', label: 'Philosophy Quote', type: 'text' },
+  ],
+  footer: [
+    { section: 'footer_copy', label: 'Footer Copyright Text', type: 'text' },
+  ],
+};
 
 const Admin = () => {
+  const { user, isAdmin, signOut, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [content, setContent] = useState<Content[]>([]);
   const [images, setImages] = useState<ImageFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [tab, setTab] = useState('overview');
+  const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passcode, setPasscode] = useState('');
-  const [currentTab, setCurrentTab] = useState('overview');
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [flash, setFlash] = useState('');
+  const [selectedPage, setSelectedPage] = useState('home');
 
-  const [formData, setFormData] = useState({
-    name: '',
-    price: 0,
-    description: '',
-    image_url: '',
-    category: ''
+  const [form, setForm] = useState({ name: '', price: 0, description: '', image_url: '', category: '' });
+  const [quickEdit, setQuickEdit] = useState<Record<string, { content: string; image_url: string }>>({});
+  const [design, setDesign] = useState(() => {
+    const s = localStorage.getItem('osirids_design');
+    return s ? JSON.parse(s) : {
+      primaryColor: '#D4AF37', backgroundColor: '#0A0A0A', accentColor: '#002366',
+      fontHeading: 'Playfair Display', fontBody: 'Inter',
+      heroHeight: '85vh', productColumns: '4',
+    };
   });
 
-  const [contentForm, setContentForm] = useState({
-    page: 'home',
-    section: 'hero_title',
-    content: '',
-    image_url: ''
-  });
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passcode === 'osirids2026') {
-      setIsAuthenticated(true);
-    } else {
-      alert('Incorrect passcode');
-    }
-  };
+  // Redirect non-admins
+  useEffect(() => {
+    if (!authLoading && !isAdmin) navigate('/');
+  }, [authLoading, isAdmin, navigate]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProducts();
-      fetchContent();
-      fetchImages();
-    }
-  }, [isAuthenticated]);
+    const map: Record<string, { content: string; image_url: string }> = {};
+    content.forEach(c => { map[`${c.page}__${c.section}`] = { content: c.content, image_url: c.image_url || '' }; });
+    setQuickEdit(map);
+  }, [content]);
+
+  const showFlash = (msg: string) => { setFlash(msg); setTimeout(() => setFlash(''), 3000); };
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([fetchProducts(), fetchContent(), fetchImages()]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) fetchAll();
+  }, [isAdmin, fetchAll]);
 
   const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      if (!supabase) throw new Error('Supabase client not initialized');
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (err) {
-      console.error('Error fetching products:', err);
-    } finally {
-      setLoading(false);
-    }
+    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    setProducts(data || []);
   };
 
   const fetchContent = async () => {
-    try {
-      if (!supabase) throw new Error('Supabase client not initialized');
-
-      const { data, error } = await supabase
-        .from('content')
-        .select('*')
-        .order('page');
-
-      if (error) throw error;
-      setContent(data || []);
-    } catch (err) {
-      console.error('Error fetching content:', err);
-    }
+    const { data } = await supabase.from('content').select('*').order('page');
+    setContent(data || []);
   };
 
   const fetchImages = async () => {
-    try {
-      if (!supabase) throw new Error('Supabase client not initialized');
-
-      const { data, error } = await supabase.storage
-        .from('images')
-        .list();
-
-      if (error) throw error;
-      const imageFiles = (data || []).map((file: any) => ({
-        id: file.id || file.name,
-        name: file.name,
-        url: supabase.storage.from('images').getPublicUrl(file.name).data.publicUrl,
-        uploaded_at: file.created_at || new Date().toISOString()
-      }));
-      setImages(imageFiles);
-    } catch (err) {
-      console.error('Error fetching images:', err);
-    }
+    const { data } = await supabase.storage.from('images').list();
+    if (!data) return;
+    setImages(data.map((f: { id: string | null; name: string }) => ({
+      id: f.id || f.name,
+      name: f.name,
+      url: supabase.storage.from('images').getPublicUrl(f.name).data.publicUrl,
+    })));
   };
 
+  // ── Content save ──────────────────────────────────────────
+  const saveSection = async (page: string, section: string) => {
+    const key = `${page}__${section}`;
+    const val = quickEdit[key] || { content: '', image_url: '' };
+    setSavingKey(key);
+    const existing = content.find(c => c.page === page && c.section === section);
+    if (existing) {
+      await supabase.from('content').update({ content: val.content, image_url: val.image_url }).eq('id', existing.id);
+    } else {
+      await supabase.from('content').insert([{ page, section, content: val.content, image_url: val.image_url }]);
+    }
+    await fetchContent();
+    setSavingKey(null);
+    showFlash(`✓ "${section}" saved`);
+  };
+
+  // ── Product CRUD ──────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (!supabase) throw new Error('Supabase client not initialized');
-
-      if (editingId) {
-        const { error } = await supabase
-          .from('products')
-          .update(formData)
-          .eq('id', editingId);
-
-        if (error) throw error;
-        setProducts(products.map(p => p.id === editingId ? { ...p, ...formData } : p));
-        setEditingId(null);
-      } else {
-        const { data, error } = await supabase
-          .from('products')
-          .insert([formData])
-          .select();
-
-        if (error) throw error;
-        setProducts([...(data || []), ...products]);
-        setShowAddForm(false);
-      }
-      setFormData({ name: '', price: 0, description: '', image_url: '', category: '' });
-    } catch (err) {
-      console.error('Error saving product:', err);
+    if (editingId) {
+      await supabase.from('products').update(form).eq('id', editingId);
+    } else {
+      await supabase.from('products').insert([form]);
     }
+    setForm({ name: '', price: 0, description: '', image_url: '', category: '' });
+    setShowForm(false); setEditingId(null);
+    await fetchProducts();
+    showFlash(editingId ? '✓ Product updated' : '✓ Product added');
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingId(product.id);
-    setFormData({
-      name: product.name,
-      price: product.price,
-      description: product.description,
-      image_url: product.image_url,
-      category: product.category
-    });
-    setShowAddForm(true);
+  const handleEdit = (p: Product) => {
+    setEditingId(p.id);
+    setForm({ name: p.name, price: p.price, description: p.description, image_url: p.image_url, category: p.category });
+    setShowForm(true);
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    try {
-      if (!supabase) throw new Error('Supabase client not initialized');
-
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      setProducts(products.filter(p => p.id !== id));
-    } catch (err) {
-      console.error('Error deleting product:', err);
-    }
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this product?')) return;
+    await supabase.from('products').delete().eq('id', id);
+    setProducts(prev => prev.filter(p => p.id !== id));
+    showFlash('✓ Product deleted');
   };
 
-  const handleContentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (!supabase) throw new Error('Supabase client not initialized');
-
-      const existing = content.find(c => c.page === contentForm.page && c.section === contentForm.section);
-
-      if (existing) {
-        const { error } = await supabase
-          .from('content')
-          .update({ content: contentForm.content, image_url: contentForm.image_url })
-          .eq('id', existing.id);
-
-        if (error) throw error;
-        setContent(content.map(c => c.id === existing.id ? { ...c, content: contentForm.content, image_url: contentForm.image_url } : c));
-      } else {
-        const { data, error } = await supabase
-          .from('content')
-          .insert([contentForm])
-          .select();
-
-        if (error) throw error;
-        setContent([...(data || []), ...content]);
-      }
-      setContentForm({ page: 'home', section: 'hero_title', content: '', image_url: '' });
-    } catch (err) {
-      console.error('Error saving content:', err);
-    }
-  };
-
+  // ── Image upload/delete ───────────────────────────────────
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    try {
-      if (!supabase) throw new Error('Supabase client not initialized');
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-
-      const { error } = await supabase.storage
-        .from('images')
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      fetchImages(); // Refresh images
-    } catch (err) {
-      console.error('Error uploading image:', err);
-    }
+    const fileName = `${Date.now()}.${file.name.split('.').pop()}`;
+    await supabase.storage.from('images').upload(fileName, file);
+    await fetchImages();
+    showFlash('✓ Image uploaded');
   };
 
   const deleteImage = async (name: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) return;
-    try {
-      if (!supabase) throw new Error('Supabase client not initialized');
-
-      const { error } = await supabase.storage
-        .from('images')
-        .remove([name]);
-
-      if (error) throw error;
-      fetchImages();
-    } catch (err) {
-      console.error('Error deleting image:', err);
-    }
+    if (!confirm('Delete this image?')) return;
+    await supabase.storage.from('images').remove([name]);
+    await fetchImages();
+    showFlash('✓ Image deleted');
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <form onSubmit={handleLogin} className="bg-white/5 p-12 border border-white/10 space-y-8 w-full max-w-md text-center">
-          <div className="space-y-4">
-            <h1 className="text-3xl font-serif font-bold text-pharoic-gold uppercase">Admin Access</h1>
-            <p className="text-white/40 text-sm">Please enter your curator passcode to continue.</p>
-          </div>
-          <input
-            type="password"
-            value={passcode}
-            onChange={e => setPasscode(e.target.value)}
-            className="w-full bg-pharoic-black border border-white/10 p-4 focus:border-pharoic-gold outline-none transition-colors text-center"
-            placeholder="PASSCODE"
-            required
-          />
-          <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
-            <LogIn size={18} /> ENTER DASHBOARD
-          </button>
-        </form>
-      </div>
-    );
-  }
+  const saveDesign = () => {
+    localStorage.setItem('osirids_design', JSON.stringify(design));
+    showFlash('✓ Design saved — refresh the site to apply');
+  };
+
+  // ─────────────────────────────────────────────────────────
+  const inp = 'w-full bg-pharoic-black border border-white/10 p-3 focus:border-pharoic-gold outline-none transition-colors text-sm text-white placeholder:text-white/20';
+  const lbl = 'text-[10px] font-bold text-pharoic-gold tracking-widest uppercase mb-1 block';
+  const presets = SECTION_PRESETS[selectedPage] || [];
+
+  if (authLoading) return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <RefreshCw size={32} className="animate-spin text-pharoic-gold" />
+    </div>
+  );
+
+  if (!isAdmin) return null;
 
   return (
-    <div className="flex flex-col md:flex-row gap-12 py-12">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 space-y-12">
-        <div className="space-y-4 text-center md:text-left">
-          <p className="text-pharoic-gold text-xs font-bold tracking-[0.3em] uppercase opacity-50">Admin Panel</p>
-          <h2 className="text-3xl font-serif font-bold text-white tracking-tight uppercase">Dashboard</h2>
+    <div className="flex flex-col md:flex-row min-h-[80vh] animate-fade-in -mx-4">
+
+      {/* Flash */}
+      {flash && (
+        <div className="fixed top-6 right-6 z-50 bg-pharoic-gold text-pharoic-black px-6 py-3 font-bold text-sm tracking-widest animate-fade-in shadow-xl">
+          {flash}
         </div>
-        <nav className="flex flex-col gap-6">
-          <button
-            onClick={() => setCurrentTab('overview')}
-            className={`flex items-center gap-4 font-bold text-sm tracking-widest p-4 rounded-sm transition-colors ${currentTab === 'overview' ? 'text-pharoic-gold bg-white/5' : 'text-white/40 hover:text-pharoic-gold'
-              }`}
-          >
-            <LayoutDashboard size={18} /> OVERVIEW
-          </button>
-          <button
-            onClick={() => setCurrentTab('products')}
-            className={`flex items-center gap-4 font-bold text-sm tracking-widest p-4 rounded-sm transition-colors ${currentTab === 'products' ? 'text-pharoic-gold bg-white/5' : 'text-white/40 hover:text-pharoic-gold'
-              }`}
-          >
-            <Package size={18} /> PRODUCTS
-          </button>
-          <button
-            onClick={() => setCurrentTab('content')}
-            className={`flex items-center gap-4 font-bold text-sm tracking-widest p-4 rounded-sm transition-colors ${currentTab === 'content' ? 'text-pharoic-gold bg-white/5' : 'text-white/40 hover:text-pharoic-gold'
-              }`}
-          >
-            <FileText size={18} /> CONTENT
-          </button>
-          <button
-            onClick={() => setCurrentTab('images')}
-            className={`flex items-center gap-4 font-bold text-sm tracking-widest p-4 rounded-sm transition-colors ${currentTab === 'images' ? 'text-pharoic-gold bg-white/5' : 'text-white/40 hover:text-pharoic-gold'
-              }`}
-          >
-            <Image size={18} /> IMAGES
-          </button>
-          <button
-            onClick={() => setCurrentTab('settings')}
-            className={`flex items-center gap-4 font-bold text-sm tracking-widest p-4 rounded-sm transition-colors ${currentTab === 'settings' ? 'text-pharoic-gold bg-white/5' : 'text-white/40 hover:text-pharoic-gold'
-              }`}
-          >
-            <Settings size={18} /> SETTINGS
-          </button>
+      )}
+
+      {/* ── Sidebar ── */}
+      <aside className="w-full md:w-56 bg-white/[0.03] border-r border-white/10 flex-shrink-0">
+        <div className="p-6 border-b border-white/10">
+          <p className="text-pharoic-gold text-[10px] font-bold tracking-[0.4em] uppercase opacity-60">Control Panel</p>
+          <h2 className="text-2xl font-serif font-bold text-white mt-1">ADMIN</h2>
+          <p className="text-white/30 text-[10px] mt-1 truncate">{user?.email}</p>
+        </div>
+        <nav className="p-3 flex flex-col gap-1">
+          {TABS.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`flex items-center gap-3 px-4 py-3 text-xs font-bold tracking-widest transition-all rounded-sm ${tab === id ? 'text-pharoic-gold bg-pharoic-gold/10 border border-pharoic-gold/20' : 'text-white/40 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <Icon size={15} /> {label}
+            </button>
+          ))}
         </nav>
+        <div className="p-4 border-t border-white/10 space-y-2 mt-auto">
+          <Link to="/" className="flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors">
+            <Eye size={13} /> VIEW SITE
+          </Link>
+          <button onClick={signOut} className="flex items-center gap-2 text-xs text-red-400/60 hover:text-red-400 transition-colors">
+            <LogOut size={13} /> SIGN OUT
+          </button>
+        </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 space-y-12">
-        {currentTab === 'overview' && (
-          <div className="space-y-8">
-            <h1 className="text-4xl font-serif font-bold text-white uppercase tracking-wider">Dashboard Overview</h1>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white/5 p-8 border border-white/10">
-                <h3 className="text-pharoic-gold font-bold text-sm tracking-widest uppercase mb-4">Total Products</h3>
-                <p className="text-3xl font-bold text-white">{products.length}</p>
-              </div>
-              <div className="bg-white/5 p-8 border border-white/10">
-                <h3 className="text-pharoic-gold font-bold text-sm tracking-widest uppercase mb-4">Total Images</h3>
-                <p className="text-3xl font-bold text-white">{images.length}</p>
-              </div>
-              <div className="bg-white/5 p-8 border border-white/10">
-                <h3 className="text-pharoic-gold font-bold text-sm tracking-widest uppercase mb-4">Content Sections</h3>
-                <p className="text-3xl font-bold text-white">{content.length}</p>
-              </div>
+      {/* ── Main ── */}
+      <main className="flex-1 p-8 space-y-10 overflow-x-auto">
+
+        {/* ── OVERVIEW ── */}
+        {tab === 'overview' && (
+          <div className="space-y-8 animate-fade-up">
+            <h1 className="text-3xl font-serif font-bold text-white uppercase">Dashboard</h1>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { label: 'Products', value: products.length },
+                { label: 'Images', value: images.length },
+                { label: 'Content Sections', value: content.length },
+                { label: 'Pages', value: 3 },
+              ].map((s, i) => (
+                <div key={i} className="bg-white/5 p-6 border border-white/10">
+                  <p className="text-pharoic-gold text-[10px] font-bold tracking-widest uppercase">{s.label}</p>
+                  <p className="text-4xl font-bold text-white mt-2">{s.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white/5 p-6 border border-pharoic-gold/10 space-y-3">
+              <h3 className="text-pharoic-gold font-bold text-xs tracking-widest uppercase">Quick Guide</h3>
+              <ul className="text-white/40 text-sm space-y-2 list-disc list-inside">
+                <li><strong className="text-white/70">Products</strong> — Add, edit, delete store items</li>
+                <li><strong className="text-white/70">Content</strong> — Edit all page text & images</li>
+                <li><strong className="text-white/70">Layout</strong> — Toggle sections, change columns & hero height</li>
+                <li><strong className="text-white/70">Images</strong> — Upload, copy URL, delete images</li>
+                <li><strong className="text-white/70">Design</strong> — Brand colors, fonts, live preview</li>
+              </ul>
             </div>
           </div>
         )}
 
-        {currentTab === 'products' && (
-          <>
-            <div className="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-8 gap-6">
-              <div className="space-y-2 text-center sm:text-left">
-                <h1 className="text-4xl font-serif font-bold text-white uppercase tracking-wider">Inventory</h1>
-                <p className="text-white/40 text-sm font-medium">Manage your product collection and stock levels.</p>
+        {/* ── PRODUCTS ── */}
+        {tab === 'products' && (
+          <div className="space-y-8 animate-fade-up">
+            <div className="flex justify-between items-center border-b border-white/10 pb-6">
+              <div>
+                <h1 className="text-3xl font-serif font-bold text-white uppercase">Inventory</h1>
+                <p className="text-white/40 text-sm mt-1">{products.length} products</p>
               </div>
               <button
-                onClick={() => {
-                  setShowAddForm(!showAddForm);
-                  setEditingId(null);
-                  setFormData({ name: '', price: 0, description: '', image_url: '', category: '' });
-                }}
-                className="btn-primary flex items-center gap-2 text-sm tracking-widest font-bold whitespace-nowrap"
+                onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: '', price: 0, description: '', image_url: '', category: '' }); }}
+                className="btn-primary flex items-center gap-2 text-sm tracking-widest font-bold"
               >
-                {showAddForm && !editingId ? <X size={18} /> : <Plus size={18} />}
-                {showAddForm && !editingId ? 'CANCEL' : 'ADD NEW PRODUCT'}
+                {showForm && !editingId ? <><X size={16} /> CANCEL</> : <><Plus size={16} /> ADD PRODUCT</>}
               </button>
             </div>
 
-            {/* Add/Edit Product Form */}
-            {showAddForm && (
-              <form onSubmit={handleSubmit} className="bg-white/5 p-12 border border-pharoic-gold/10 space-y-8 animate-in fade-in slide-in-from-top-4">
-                <h2 className="text-2xl font-serif font-bold text-pharoic-gold uppercase italic">
-                  {editingId ? 'Edit Product' : 'New Product Details'}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Product Name</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full bg-pharoic-black border border-white/10 p-4 focus:border-pharoic-gold outline-none transition-colors"
-                      placeholder="e.g. THE ANUBIS TEE"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Price ($)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                      className="w-full bg-pharoic-black border border-white/10 p-4 focus:border-pharoic-gold outline-none transition-colors"
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Category</label>
-                    <input
-                      type="text"
-                      value={formData.category}
-                      onChange={e => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full bg-pharoic-black border border-white/10 p-4 focus:border-pharoic-gold outline-none transition-colors"
-                      placeholder="e.g. T-SHIRTS"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Image URL</label>
-                    <input
-                      type="text"
-                      value={formData.image_url}
-                      onChange={e => setFormData({ ...formData, image_url: e.target.value })}
-                      className="w-full bg-pharoic-black border border-white/10 p-4 focus:border-pharoic-gold outline-none transition-colors"
-                      placeholder="https://..."
-                      required
-                    />
-                  </div>
+            {showForm && (
+              <form onSubmit={handleSubmit} className="bg-white/5 p-8 border border-pharoic-gold/10 space-y-6 animate-fade-up">
+                <h2 className="text-xl font-serif font-bold text-pharoic-gold uppercase">{editingId ? 'Edit Product' : 'New Product'}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div><label className={lbl}>Name</label><input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={inp} placeholder="THE ANUBIS TEE" required /></div>
+                  <div><label className={lbl}>Price ($)</label><input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: parseFloat(e.target.value) })} className={inp} placeholder="0.00" required /></div>
+                  <div><label className={lbl}>Category</label><input type="text" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className={inp} placeholder="T-SHIRTS" required /></div>
+                  <div><label className={lbl}>Image URL</label><input type="text" value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} className={inp} placeholder="https://..." required /></div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Description</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full bg-pharoic-black border border-white/10 p-4 h-32 focus:border-pharoic-gold outline-none transition-colors"
-                    placeholder="Describe the piece..."
-                    required
-                  />
-                </div>
+                <div><label className={lbl}>Description</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={`${inp} h-24`} placeholder="Describe this piece..." required /></div>
                 <div className="flex gap-4">
-                  <button type="submit" className="btn-primary font-bold tracking-widest text-sm flex items-center gap-2">
-                    <Save size={18} /> {editingId ? 'UPDATE PRODUCT' : 'SAVE PRODUCT'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddForm(false);
-                      setEditingId(null);
-                    }}
-                    className="btn-outline font-bold tracking-widest text-sm"
-                  >
-                    CANCEL
-                  </button>
+                  <button type="submit" className="btn-primary text-sm font-bold tracking-widest flex items-center gap-2"><Save size={15} /> {editingId ? 'UPDATE' : 'SAVE'}</button>
+                  <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="btn-outline text-sm font-bold tracking-widest">CANCEL</button>
                 </div>
               </form>
             )}
 
-            {/* Product Table */}
-            <div className="overflow-x-auto border border-white/5 rounded-sm">
-              <table className="w-full text-left border-collapse min-w-[800px]">
+            <div className="overflow-x-auto border border-white/5">
+              <table className="w-full text-left border-collapse min-w-[640px]">
                 <thead>
                   <tr className="bg-white/5 border-b border-white/10">
-                    <th className="p-6 text-xs font-bold text-pharoic-gold tracking-widest uppercase">IMAGE</th>
-                    <th className="p-6 text-xs font-bold text-pharoic-gold tracking-widest uppercase">NAME</th>
-                    <th className="p-6 text-xs font-bold text-pharoic-gold tracking-widest uppercase">CATEGORY</th>
-                    <th className="p-6 text-xs font-bold text-pharoic-gold tracking-widest uppercase">PRICE</th>
-                    <th className="p-6 text-xs font-bold text-pharoic-gold tracking-widest uppercase text-right">ACTIONS</th>
+                    {['IMAGE', 'NAME', 'CATEGORY', 'PRICE', 'ACTIONS'].map(h => (
+                      <th key={h} className="p-5 text-[10px] font-bold text-pharoic-gold tracking-widest uppercase">{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {loading ? (
-                    <tr><td colSpan={5} className="p-12 text-center text-white/40">Loading your inventory...</td></tr>
+                    <tr><td colSpan={5} className="p-12 text-center text-white/30">Loading...</td></tr>
                   ) : products.length === 0 ? (
-                    <tr><td colSpan={5} className="p-12 text-center text-white/40">Your inventory is empty. Start adding products.</td></tr>
-                  ) : (
-                    products.map(product => (
-                      <tr key={product.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="p-6">
-                          <img src={product.image_url} alt={product.name} className="w-16 h-20 object-cover rounded-sm border border-white/10 grayscale group-hover:grayscale-0 transition-all" />
-                        </td>
-                        <td className="p-6 font-serif font-bold text-white tracking-wide">{product.name}</td>
-                        <td className="p-6 text-white/40 font-medium">{product.category}</td>
-                        <td className="p-6 font-bold text-pharoic-gold">${product.price}</td>
-                        <td className="p-6 text-right space-x-4">
-                          <button
-                            onClick={() => handleEdit(product)}
-                            className="text-white/40 hover:text-pharoic-gold transition-colors"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product.id)}
-                            className="text-white/40 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                    <tr><td colSpan={5} className="p-12 text-center text-white/30">No products yet. Add your first one above.</td></tr>
+                  ) : products.map(p => (
+                    <tr key={p.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="p-5">
+                        <img src={p.image_url} alt={p.name} className="w-12 h-16 object-cover border border-white/10 grayscale group-hover:grayscale-0 transition-all" />
+                      </td>
+                      <td className="p-5 font-serif font-bold text-white">{p.name}</td>
+                      <td className="p-5 text-white/40 text-sm">{p.category}</td>
+                      <td className="p-5 text-pharoic-gold font-bold">${p.price}</td>
+                      <td className="p-5 text-right space-x-4">
+                        <button onClick={() => handleEdit(p)} className="text-white/40 hover:text-pharoic-gold transition-colors"><Edit2 size={16} /></button>
+                        <button onClick={() => handleDelete(p.id)} className="text-white/40 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-          </>
+          </div>
         )}
 
-        {currentTab === 'content' && (
-          <div className="space-y-12">
-            <div className="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-8 gap-6">
-              <div className="space-y-2 text-center sm:text-left">
-                <h1 className="text-4xl font-serif font-bold text-white uppercase tracking-wider">Content Management</h1>
-                <p className="text-white/40 text-sm font-medium">Edit website text and images.</p>
+        {/* ── CONTENT ── */}
+        {tab === 'content' && (
+          <div className="space-y-8 animate-fade-up">
+            <div className="flex justify-between items-center border-b border-white/10 pb-6">
+              <div>
+                <h1 className="text-3xl font-serif font-bold text-white uppercase">Content Editor</h1>
+                <p className="text-white/40 text-sm mt-1">Edit every piece of text & image on the site</p>
               </div>
+              <button onClick={fetchContent} className="flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors font-bold tracking-widest">
+                <RefreshCw size={13} /> REFRESH
+              </button>
             </div>
+            <div className="flex gap-2 flex-wrap">
+              {Object.keys(SECTION_PRESETS).map(pg => (
+                <button key={pg} onClick={() => setSelectedPage(pg)}
+                  className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border transition-all ${selectedPage === pg ? 'border-pharoic-gold bg-pharoic-gold/10 text-pharoic-gold' : 'border-white/10 text-white/40 hover:border-white/30 hover:text-white'
+                    }`}
+                >{pg}</button>
+              ))}
+            </div>
+            <div className="space-y-4">
+              {presets.map(preset => {
+                const key = `${selectedPage}__${preset.section}`;
+                const val = quickEdit[key] || { content: '', image_url: '' };
+                const saving = savingKey === key;
+                return (
+                  <div key={key} className="bg-white/5 p-6 border border-white/10 space-y-3">
+                    <div className="flex justify-between">
+                      <label className={lbl}>{preset.label}</label>
+                      <span className="text-white/20 text-[9px] font-mono tracking-widest">{preset.section}</span>
+                    </div>
+                    {preset.type === 'text' ? (
+                      <textarea
+                        value={val.content}
+                        onChange={e => setQuickEdit(prev => ({ ...prev, [key]: { ...val, content: e.target.value } }))}
+                        className={`${inp} h-20 resize-none`}
+                        placeholder={`Enter ${preset.label.toLowerCase()}...`}
+                      />
+                    ) : (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={val.image_url}
+                          onChange={e => setQuickEdit(prev => ({ ...prev, [key]: { ...val, image_url: e.target.value } }))}
+                          className={inp}
+                          placeholder="https://image-url.com/photo.jpg"
+                        />
+                        {val.image_url && (
+                          <img src={val.image_url} alt="" className="h-20 w-auto object-cover border border-white/10" />
+                        )}
+                      </div>
+                    )}
+                    <button onClick={() => saveSection(selectedPage, preset.section)} disabled={saving}
+                      className="btn-primary text-xs font-bold tracking-widest flex items-center gap-2 py-2 disabled:opacity-60"
+                    >
+                      {saving ? <><RefreshCw size={13} className="animate-spin" /> SAVING...</> : <><Save size={13} /> SAVE</>}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-            <form onSubmit={handleContentSubmit} className="bg-white/5 p-12 border border-pharoic-gold/10 space-y-8">
-              <h2 className="text-2xl font-serif font-bold text-pharoic-gold uppercase italic">Edit Content</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* ── LAYOUT ── */}
+        {tab === 'layout' && (
+          <div className="space-y-8 animate-fade-up">
+            <div className="border-b border-white/10 pb-6">
+              <h1 className="text-3xl font-serif font-bold text-white uppercase">Layout Controls</h1>
+              <p className="text-white/40 text-sm mt-1">Control page structure and section settings</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white/5 p-6 border border-white/10 space-y-5">
+                <h2 className="text-pharoic-gold font-bold text-xs tracking-widest uppercase">Grid & Dimensions</h2>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Page</label>
-                  <select
-                    value={contentForm.page}
-                    onChange={e => setContentForm({ ...contentForm, page: e.target.value })}
-                    className="w-full bg-pharoic-black border border-white/10 p-4 focus:border-pharoic-gold outline-none transition-colors"
-                  >
-                    <option value="home">Home</option>
-                    <option value="about">About</option>
-                    <option value="products">Products</option>
+                  <label className={lbl}>Product Columns</label>
+                  <select value={design.productColumns} onChange={e => setDesign((d: typeof design) => ({ ...d, productColumns: e.target.value }))} className={inp}>
+                    <option value="2">2 Columns</option>
+                    <option value="3">3 Columns</option>
+                    <option value="4">4 Columns (Default)</option>
+                    <option value="5">5 Columns</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Section</label>
-                  <input
-                    type="text"
-                    value={contentForm.section}
-                    onChange={e => setContentForm({ ...contentForm, section: e.target.value })}
-                    className="w-full bg-pharoic-black border border-white/10 p-4 focus:border-pharoic-gold outline-none transition-colors"
-                    placeholder="e.g. hero_title"
-                  />
+                  <label className={lbl}>Hero Height</label>
+                  <select value={design.heroHeight} onChange={e => setDesign((d: typeof design) => ({ ...d, heroHeight: e.target.value }))} className={inp}>
+                    <option value="60vh">60vh — Short</option>
+                    <option value="75vh">75vh — Medium</option>
+                    <option value="85vh">85vh — Tall (Default)</option>
+                    <option value="100vh">100vh — Full Screen</option>
+                  </select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Content</label>
-                <textarea
-                  value={contentForm.content}
-                  onChange={e => setContentForm({ ...contentForm, content: e.target.value })}
-                  className="w-full bg-pharoic-black border border-white/10 p-4 h-32 focus:border-pharoic-gold outline-none transition-colors"
-                  placeholder="Enter content..."
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-pharoic-gold tracking-widest uppercase">Image URL (optional)</label>
-                <input
-                  type="text"
-                  value={contentForm.image_url}
-                  onChange={e => setContentForm({ ...contentForm, image_url: e.target.value })}
-                  className="w-full bg-pharoic-black border border-white/10 p-4 focus:border-pharoic-gold outline-none transition-colors"
-                  placeholder="https://..."
-                />
-              </div>
-              <button type="submit" className="btn-primary font-bold tracking-widest text-sm flex items-center gap-2">
-                <Save size={18} /> SAVE CONTENT
-              </button>
-            </form>
-
-            <div className="space-y-4">
-              <h3 className="text-xl font-serif font-bold text-white uppercase">Current Content</h3>
-              {content.map(item => (
-                <div key={item.id} className="bg-white/5 p-6 border border-white/10">
-                  <p className="text-pharoic-gold font-bold">{item.page} - {item.section}</p>
-                  <p className="text-white mt-2">{item.content}</p>
-                  {item.image_url && <img src={item.image_url} alt="" className="w-32 h-32 object-cover mt-4" />}
-                </div>
-              ))}
             </div>
+            <button onClick={saveDesign} className="btn-primary font-bold tracking-widest text-sm flex items-center gap-2">
+              <Save size={15} /> SAVE LAYOUT
+            </button>
           </div>
         )}
 
-        {currentTab === 'images' && (
-          <div className="space-y-12">
-            <div className="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-8 gap-6">
-              <div className="space-y-2 text-center sm:text-left">
-                <h1 className="text-4xl font-serif font-bold text-white uppercase tracking-wider">Image Library</h1>
-                <p className="text-white/40 text-sm font-medium">Upload and manage website images.</p>
+        {/* ── IMAGES ── */}
+        {tab === 'images' && (
+          <div className="space-y-8 animate-fade-up">
+            <div className="flex justify-between items-center border-b border-white/10 pb-6">
+              <div>
+                <h1 className="text-3xl font-serif font-bold text-white uppercase">Image Library</h1>
+                <p className="text-white/40 text-sm mt-1">Upload images, then copy their URL into Content fields</p>
               </div>
-              <label className="btn-primary flex items-center gap-2 text-sm tracking-widest font-bold whitespace-nowrap cursor-pointer">
-                <Upload size={18} /> UPLOAD IMAGE
+              <label className="btn-primary flex items-center gap-2 text-sm tracking-widest font-bold cursor-pointer">
+                <Upload size={15} /> UPLOAD
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               </label>
             </div>
+            {images.length === 0 ? (
+              <p className="text-white/30 text-sm">No images yet. Upload one above.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {images.map(img => (
+                  <div key={img.id} className="bg-white/5 border border-white/10 p-4 space-y-3">
+                    <img src={img.url} alt={img.name} className="w-full h-40 object-cover" />
+                    <p className="text-white/40 text-xs font-mono truncate">{img.name}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(img.url); showFlash('✓ URL copied!'); }}
+                        className="flex-1 text-xs text-pharoic-gold border border-pharoic-gold/30 py-2 hover:bg-pharoic-gold/10 transition-colors font-bold tracking-widest"
+                      >
+                        COPY URL
+                      </button>
+                      <button onClick={() => deleteImage(img.name)} className="px-3 border border-white/10 text-white/30 hover:text-red-500 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {images.map(image => (
-                <div key={image.id} className="bg-white/5 p-6 border border-white/10">
-                  <img src={image.url} alt={image.name} className="w-full h-48 object-cover mb-4" />
-                  <p className="text-white font-medium mb-2">{image.name}</p>
-                  <button
-                    onClick={() => deleteImage(image.name)}
-                    className="text-red-500 hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+        {/* ── DESIGN ── */}
+        {tab === 'design' && (
+          <div className="space-y-8 animate-fade-up">
+            <div className="border-b border-white/10 pb-6">
+              <h1 className="text-3xl font-serif font-bold text-white uppercase">Design Settings</h1>
+              <p className="text-white/40 text-sm mt-1">Brand colors and typography</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white/5 p-6 border border-white/10 space-y-6">
+                <h2 className="text-pharoic-gold font-bold text-xs tracking-widest uppercase">Brand Colors</h2>
+                {[
+                  { key: 'primaryColor', label: 'Gold / Primary Color' },
+                  { key: 'backgroundColor', label: 'Background Color' },
+                  { key: 'accentColor', label: 'Accent Color' },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <span className="text-white/50 text-sm">{label}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/30 text-xs font-mono">{design[key as keyof typeof design]}</span>
+                      <input type="color" value={design[key as keyof typeof design] as string}
+                        onChange={e => setDesign((d: typeof design) => ({ ...d, [key]: e.target.value }))}
+                        className="w-10 h-10 rounded cursor-pointer border border-white/10 bg-transparent"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-white/5 p-6 border border-white/10 space-y-6">
+                <h2 className="text-pharoic-gold font-bold text-xs tracking-widest uppercase">Typography</h2>
+                <div className="space-y-2">
+                  <label className={lbl}>Heading Font</label>
+                  <select value={design.fontHeading} onChange={e => setDesign((d: typeof design) => ({ ...d, fontHeading: e.target.value }))} className={inp}>
+                    <option>Playfair Display</option>
+                    <option>Cormorant Garamond</option>
+                    <option>EB Garamond</option>
+                    <option>Cinzel</option>
+                  </select>
                 </div>
-              ))}
+                <div className="space-y-2">
+                  <label className={lbl}>Body Font</label>
+                  <select value={design.fontBody} onChange={e => setDesign((d: typeof design) => ({ ...d, fontBody: e.target.value }))} className={inp}>
+                    <option>Inter</option>
+                    <option>DM Sans</option>
+                    <option>Lato</option>
+                    <option>Open Sans</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Live preview */}
+            <div className="p-8 border border-pharoic-gold/20 space-y-4" style={{ background: design.backgroundColor }}>
+              <p className="text-xs tracking-widest uppercase" style={{ color: design.primaryColor, fontFamily: design.fontBody }}>Preview</p>
+              <h3 className="text-4xl font-bold" style={{ color: '#fff', fontFamily: design.fontHeading }}>OSIRIDS</h3>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: design.fontBody }}>Modern aesthetics meets timeless heritage.</p>
+              <span className="inline-block px-5 py-2 text-xs font-bold" style={{ background: design.primaryColor, color: design.backgroundColor }}>SHOP NOW</span>
+            </div>
+
+            <button onClick={saveDesign} className="btn-primary font-bold tracking-widest text-sm flex items-center gap-2">
+              <Save size={15} /> SAVE DESIGN
+            </button>
+          </div>
+        )}
+
+        {/* ── SETTINGS ── */}
+        {tab === 'settings' && (
+          <div className="space-y-8 animate-fade-up">
+            <h1 className="text-3xl font-serif font-bold text-white uppercase">Settings</h1>
+            <div className="bg-white/5 p-6 border border-white/10 space-y-4">
+              <h2 className="text-pharoic-gold font-bold text-xs tracking-widest uppercase">Admin Account</h2>
+              <p className="text-white/40 text-sm">Signed in as: <span className="text-white font-bold">{user?.email}</span></p>
+              <p className="text-white/40 text-sm">Role: <span className="text-pharoic-gold font-bold">ADMIN</span></p>
+              <button onClick={signOut} className="btn-outline text-xs font-bold tracking-widest flex items-center gap-2 mt-4">
+                <LogOut size={14} /> SIGN OUT
+              </button>
+            </div>
+            <div className="bg-white/5 p-6 border border-white/10 space-y-3">
+              <h2 className="text-pharoic-gold font-bold text-xs tracking-widest uppercase">Database</h2>
+              <p className="text-white/40 text-sm">Connected to Supabase project: <code className="text-white/60">ejvsxpqogmrssudjghuk</code></p>
+              <p className="text-white/40 text-sm">Tables: <code className="text-white/60">profiles, products, content, orders, order_items, wishlist</code></p>
+              <button onClick={fetchAll} className="btn-outline text-xs font-bold tracking-widest flex items-center gap-2">
+                <RefreshCw size={13} /> REFRESH ALL DATA
+              </button>
             </div>
           </div>
         )}
 
-        {currentTab === 'settings' && (
-          <div className="space-y-12">
-            <h1 className="text-4xl font-serif font-bold text-white uppercase tracking-wider">Settings</h1>
-            <p className="text-white/40">Settings panel coming soon...</p>
-          </div>
-        )}
       </main>
     </div>
   );
