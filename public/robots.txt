@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cart
+
+# Sitemap location
+Sitemap: https://osirids-8b592.web.app/sitemap.xml
