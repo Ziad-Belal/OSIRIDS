@@ -1,282 +1,399 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface EntryExperienceProps {
   onComplete: () => void;
 }
 
 const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
-  const [phase, setPhase] = useState<
-    'landing' | 'temple' | 'door-open' | 'zoom' | 'darkness' | 'done'
-  >('landing');
+  const [phase, setPhase] = useState<'door' | 'open' | 'zoom' | 'darkness' | 'done'>('door');
 
   const handleEnter = () => {
-    setPhase('temple');
-    setTimeout(() => setPhase('door-open'), 2200);
-    setTimeout(() => setPhase('zoom'),      3800);
-    setTimeout(() => setPhase('darkness'),  5400);
-    setTimeout(() => {
-      setPhase('done');
-      onComplete();
-    }, 6800);
+    setPhase('open');
+    setTimeout(() => setPhase('zoom'),     1800);
+    setTimeout(() => setPhase('darkness'), 3200);
+    setTimeout(() => { setPhase('done'); onComplete(); }, 4400);
   };
 
+  if (phase === 'done') return null;
+
   return (
-    <div
-      className="entry-root"
-      style={{ display: phase === 'done' ? 'none' : 'flex' }}
-    >
-      {/* ── LANDING SCREEN ── */}
-      {phase === 'landing' && (
-        <div className="landing">
-          <div className="landing-bg" />
-          <div className="hieroglyphs-top">
-            {['𓂀','𓃀','𓄿','𓅱','𓆣','𓇯','𓈖','𓉐','𓊪','𓋴','𓌀','𓍿'].map((g, i) => (
-              <span key={i} className="glyph" style={{ animationDelay: `${i * 0.15}s` }}>{g}</span>
-            ))}
-          </div>
-          <div className="landing-content">
-            <div className="eye-of-ra">
-              <svg viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="60" cy="30" rx="58" ry="28" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
-                <circle cx="60" cy="30" r="12" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
-                <circle cx="60" cy="30" r="5" fill="#D4AF37"/>
-                <path d="M60 42 L55 55 L60 52 L65 55 Z" fill="#D4AF37"/>
-                <line x1="2" y1="30" x2="20" y2="30" stroke="#D4AF37" strokeWidth="1"/>
-                <line x1="100" y1="30" x2="118" y2="30" stroke="#D4AF37" strokeWidth="1"/>
-              </svg>
+    <div className="entry-wrap">
+
+      {/* ── DOOR SCENE ── */}
+      {(phase === 'door' || phase === 'open' || phase === 'zoom') && (
+        <div className={`door-scene ds-${phase}`}>
+
+          {/* Dark atmospheric background */}
+          <div className="ds-bg" />
+
+          {/* Torches left & right */}
+          <div className="torch torch-l"><div className="flame" /></div>
+          <div className="torch torch-r"><div className="flame" /></div>
+
+          {/* The Door */}
+          <div className="the-door">
+
+            {/* TOP PANEL — hieroglyphs bar */}
+            <div className="door-top-bar">
+              {['𓂀','𓃭','𓄿','𓅱','𓆣','𓇯','𓈖','𓉐','𓊪','𓋴','𓌀','𓍿','𓎡','𓏏','𓐍','𓑁'].map((g,i) => (
+                <span key={i}>{g}</span>
+              ))}
             </div>
-            <div className="brand-name">OSIRIDS</div>
-            <div className="brand-sub">PHAROIC CLOTHING</div>
-            <div className="divider-line" />
-            <button className="enter-btn" onClick={handleEnter}>
-              <span className="enter-text">ENTER</span>
-              <span className="enter-glyph">𓂀</span>
-            </button>
-            <p className="enter-hint">The gates of legacy await</p>
-          </div>
-          <div className="hieroglyphs-bottom">
-            {['𓏏','𓎡','𓐍','𓑁','𓒀','𓓇','𓔎','𓕍','𓖌','𓗋','𓘊','𓙉'].map((g, i) => (
-              <span key={i} className="glyph" style={{ animationDelay: `${i * 0.15 + 0.5}s` }}>{g}</span>
-            ))}
-          </div>
-          <div className="sand-overlay" />
-        </div>
-      )}
 
-      {/* ── TEMPLE + DOOR ANIMATION ── */}
-      {(phase === 'temple' || phase === 'door-open' || phase === 'zoom') && (
-        <div className={`temple-scene phase-${phase}`}>
-          {/* Sky / background */}
-          <div className="temple-sky" />
+            {/* MAIN DOOR PANELS */}
+            <div className="door-panels">
 
-          {/* Stars */}
-          <div className="stars">
-            {[...Array(60)].map((_, i) => (
-              <div key={i} className="star" style={{
-                left:  `${Math.random() * 100}%`,
-                top:   `${Math.random() * 60}%`,
-                width: `${Math.random() * 2 + 1}px`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${Math.random() * 2 + 2}s`,
-              }} />
-            ))}
-          </div>
-
-          {/* Moon */}
-          <div className="moon" />
-
-          {/* Desert floor */}
-          <div className="desert-floor" />
-
-          {/* Temple structure */}
-          <div className="temple">
-            {/* Pillars left */}
-            <div className="pillar pillar-far-left" />
-            <div className="pillar pillar-left" />
-
-            {/* Main temple body */}
-            <div className="temple-body">
-              {/* Top cornice */}
-              <div className="cornice">
-                <div className="cornice-pattern">
-                  {[...Array(20)].map((_, i) => (
-                    <div key={i} className="cornice-block" />
-                  ))}
+              {/* LEFT PANEL */}
+              <div className="panel panel-l">
+                {/* Hieroglyph border top */}
+                <div className="panel-border-top">
+                  {['𓂀','𓃭','𓄿','𓅱','𓆣','𓇯','𓈖','𓉐'].map((g,i)=><span key={i}>{g}</span>)}
                 </div>
-                <div className="cornice-frieze">
-                  {['𓂀','𓃭','𓄿','𓅱','𓆣','𓇯','𓈖'].map((g, i) => (
-                    <span key={i} className="frieze-glyph">{g}</span>
-                  ))}
+                {/* Left column glyphs */}
+                <div className="panel-col-left">
+                  {['𓊪','𓋴','𓌀','𓍿','𓎡','𓏏','𓐍','𓑁','𓒀','𓓇'].map((g,i)=><span key={i}>{g}</span>)}
                 </div>
-              </div>
-
-              {/* Temple wall */}
-              <div className="temple-wall">
-                {/* Wall hieroglyphs */}
-                <div className="wall-glyphs left-glyphs">
-                  {['𓂀','𓃀','𓄿','𓅱','𓆣','𓇯','𓈖','𓉐'].map((g, i) => (
-                    <span key={i}>{g}</span>
-                  ))}
-                </div>
-                <div className="wall-glyphs right-glyphs">
-                  {['𓊪','𓋴','𓌀','𓍿','𓎡','𓏏','𓐍','𓑁'].map((g, i) => (
-                    <span key={i}>{g}</span>
-                  ))}
-                </div>
-
-                {/* THE DOOR */}
-                <div className="door-frame">
-                  <div className="door-top-glyph">𓂀</div>
-                  <div className="door-container">
-                    <div className="door-left" />
-                    <div className="door-right" />
-                    {/* Inner glow when opening */}
-                    <div className="door-inner-light" />
+                {/* Center content */}
+                <div className="panel-center">
+                  {/* Ankh */}
+                  <div className="ankh">☥</div>
+                  {/* OSIR text */}
+                  <div className="door-text">OSIR</div>
+                  {/* Scarab */}
+                  <div className="scarab">𓆣</div>
+                  {/* More glyphs */}
+                  <div className="center-glyphs">
+                    {['𓂀','𓃭','𓄿','𓅱','𓆣','𓇯'].map((g,i)=><span key={i}>{g}</span>)}
                   </div>
-                  <div className="door-step" />
+                </div>
+                {/* Right column glyphs */}
+                <div className="panel-col-right">
+                  {['𓒀','𓓇','𓔎','𓕍','𓖌','𓗋','𓘊','𓙉','𓚈','𓛇'].map((g,i)=><span key={i}>{g}</span>)}
+                </div>
+                {/* Door knob */}
+                <div className="knob knob-r" />
+                {/* Hieroglyph border bottom */}
+                <div className="panel-border-bottom">
+                  {['𓈖','𓉐','𓊪','𓋴','𓌀','𓍿','𓎡','𓏏'].map((g,i)=><span key={i}>{g}</span>)}
+                </div>
+              </div>
+
+              {/* CENTER SEAM + glow */}
+              <div className="door-seam">
+                <div className="seam-glow" />
+              </div>
+
+              {/* RIGHT PANEL */}
+              <div className="panel panel-r">
+                <div className="panel-border-top">
+                  {['𓑁','𓒀','𓓇','𓔎','𓕍','𓖌','𓗋','𓘊'].map((g,i)=><span key={i}>{g}</span>)}
+                </div>
+                <div className="panel-col-left">
+                  {['𓙉','𓚈','𓛇','𓜆','𓝅','𓞄','𓟃','𓠂','𓡁','𓢀'].map((g,i)=><span key={i}>{g}</span>)}
+                </div>
+                <div className="panel-center">
+                  <div className="ankh">☥</div>
+                  <div className="door-text">IDS</div>
+                  <div className="scarab">𓆣</div>
+                  <div className="center-glyphs">
+                    {['𓈖','𓉐','𓊪','𓋴','𓌀','𓍿'].map((g,i)=><span key={i}>{g}</span>)}
+                  </div>
+                </div>
+                <div className="panel-col-right">
+                  {['𓢀','𓣿','𓤾','𓥽','𓦼','𓧻','𓨺','𓩹','𓪸','𓫷'].map((g,i)=><span key={i}>{g}</span>)}
+                </div>
+                <div className="knob knob-l" />
+                <div className="panel-border-bottom">
+                  {['𓊪','𓋴','𓌀','𓍿','𓎡','𓏏','𓐍','𓑁'].map((g,i)=><span key={i}>{g}</span>)}
                 </div>
               </div>
             </div>
 
-            {/* Pillars right */}
-            <div className="pillar pillar-right" />
-            <div className="pillar pillar-far-right" />
+            {/* BOTTOM STEP */}
+            <div className="door-step">
+              <div className="step-glyphs">
+                {['𓂀','𓃭','𓄿','𓅱','𓆣','𓇯','𓈖','𓉐','𓊪','𓋴','𓌀','𓍿'].map((g,i)=><span key={i}>{g}</span>)}
+              </div>
+            </div>
+
+            {/* ENTER button — only in door phase */}
+            {phase === 'door' && (
+              <button className="enter-button" onClick={handleEnter}>
+                <span>ENTER</span>
+                <span className="enter-glyph">𓂀</span>
+              </button>
+            )}
           </div>
 
           {/* Zoom darkness overlay */}
-          <div className="zoom-darkness" />
+          <div className="zoom-overlay" />
         </div>
       )}
 
-      {/* ── TOTAL DARKNESS ── */}
-      {phase === 'darkness' && (
-        <div className="total-darkness" />
-      )}
+      {/* TOTAL DARKNESS */}
+      {phase === 'darkness' && <div className="total-dark" />}
 
       <style>{`
-        /* ===== ROOT ===== */
-        .entry-root {
+        /* ── ROOT ── */
+        .entry-wrap {
           position: fixed;
           inset: 0;
           z-index: 9999;
+          background: #020100;
           display: flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
-          background: #050505;
         }
 
-        /* ===== LANDING ===== */
-        .landing {
+        /* ── SCENE ── */
+        .door-scene {
           width: 100%;
           height: 100%;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
           position: relative;
           overflow: hidden;
-          background: radial-gradient(ellipse at 50% 40%, #0d0a00 0%, #050505 70%);
         }
-        .landing-bg {
+
+        /* Background */
+        .ds-bg {
           position: absolute;
           inset: 0;
           background:
-            radial-gradient(ellipse 80% 50% at 50% 60%, rgba(212,175,55,0.04) 0%, transparent 70%),
-            repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 80px,
-              rgba(212,175,55,0.015) 80px,
-              rgba(212,175,55,0.015) 81px
-            ),
-            repeating-linear-gradient(
-              90deg,
-              transparent,
-              transparent 80px,
-              rgba(212,175,55,0.015) 80px,
-              rgba(212,175,55,0.015) 81px
-            );
+            radial-gradient(ellipse 60% 70% at 50% 60%, #1a1005 0%, #080500 50%, #020100 100%);
         }
-        .sand-overlay {
+
+        /* ── TORCHES ── */
+        .torch {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 120px;
-          background: linear-gradient(to top, rgba(212,175,55,0.06), transparent);
-          pointer-events: none;
+          bottom: 30%;
+          width: 12px;
+          height: 60px;
+          background: linear-gradient(to top, #3a2a10, #6b4c1e);
+          border-radius: 2px;
+          z-index: 2;
         }
-        .hieroglyphs-top, .hieroglyphs-bottom {
+        .torch-l { left: calc(50% - 260px); }
+        .torch-r { right: calc(50% - 260px); }
+        .flame {
           position: absolute;
-          left: 0; right: 0;
-          display: flex;
-          justify-content: center;
-          gap: 24px;
-          padding: 0 20px;
+          top: -30px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 20px;
+          height: 30px;
+          background: radial-gradient(ellipse at 50% 100%, #ffaa00, #ff6600 40%, transparent 80%);
+          border-radius: 50% 50% 30% 30%;
+          animation: flicker 0.3s ease-in-out infinite alternate;
+          filter: blur(1px);
         }
-        .hieroglyphs-top  { top: 24px; }
-        .hieroglyphs-bottom { bottom: 24px; }
-        .glyph {
-          color: rgba(212,175,55,0.25);
-          font-size: 20px;
-          animation: glyphPulse 3s ease-in-out infinite;
+        @keyframes flicker {
+          from { transform: translateX(-50%) scaleY(1) scaleX(1); opacity: 1; }
+          to   { transform: translateX(-48%) scaleY(1.1) scaleX(0.9); opacity: 0.85; }
         }
-        @keyframes glyphPulse {
-          0%,100% { opacity: 0.2; }
-          50%      { opacity: 0.6; }
-        }
-        .landing-content {
+
+        /* ── THE DOOR ── */
+        .the-door {
+          position: relative;
+          z-index: 3;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 20px;
-          z-index: 2;
-          animation: landingReveal 1.2s ease both;
+          animation: doorReveal 1.2s ease both;
+          filter: drop-shadow(0 0 40px rgba(212,175,55,0.15));
         }
-        @keyframes landingReveal {
-          from { opacity: 0; transform: translateY(30px); }
+        @keyframes doorReveal {
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .eye-of-ra {
-          width: 140px;
-          height: 70px;
-          animation: eyeGlow 3s ease-in-out infinite;
-          filter: drop-shadow(0 0 16px rgba(212,175,55,0.6));
+
+        /* Top hieroglyph bar */
+        .door-top-bar {
+          width: 100%;
+          background: linear-gradient(to bottom, #2a1f08, #1a1308);
+          border: 1px solid #D4AF37;
+          border-bottom: none;
+          padding: 6px 8px;
+          display: flex;
+          justify-content: center;
+          gap: 6px;
+          flex-wrap: wrap;
         }
-        @keyframes eyeGlow {
-          0%,100% { filter: drop-shadow(0 0 8px rgba(212,175,55,0.4)); }
-          50%      { filter: drop-shadow(0 0 24px rgba(212,175,55,0.9)); }
+        .door-top-bar span {
+          color: #D4AF37;
+          font-size: 14px;
+          opacity: 0.8;
         }
-        .brand-name {
-          font-family: 'Playfair Display', serif;
-          font-size: clamp(64px, 14vw, 128px);
+
+        /* Door panels container */
+        .door-panels {
+          display: flex;
+          position: relative;
+        }
+
+        /* Individual panel */
+        .panel {
+          width: clamp(140px, 22vw, 220px);
+          height: clamp(380px, 60vh, 560px);
+          background: linear-gradient(135deg, #0d0a04 0%, #1a1408 30%, #0d0a04 60%, #120e05 100%);
+          border: 1.5px solid #D4AF37;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          transition: transform 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Panel inner layout */
+        .panel-border-top, .panel-border-bottom {
+          position: absolute;
+          left: 8px; right: 8px;
+          display: flex;
+          justify-content: space-around;
+          background: rgba(212,175,55,0.08);
+          border: 1px solid rgba(212,175,55,0.2);
+          padding: 3px;
+        }
+        .panel-border-top  { top: 8px; }
+        .panel-border-bottom { bottom: 8px; }
+        .panel-border-top span, .panel-border-bottom span {
+          color: rgba(212,175,55,0.6);
+          font-size: 10px;
+        }
+
+        .panel-col-left, .panel-col-right {
+          position: absolute;
+          top: 36px; bottom: 36px;
+          width: 22px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-around;
+          align-items: center;
+          background: rgba(212,175,55,0.05);
+          border: 1px solid rgba(212,175,55,0.15);
+        }
+        .panel-col-left  { left: 8px; }
+        .panel-col-right { right: 8px; }
+        .panel-col-left span, .panel-col-right span {
+          color: rgba(212,175,55,0.5);
+          font-size: 10px;
+        }
+
+        /* Center content */
+        .panel-center {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          padding: 40px 32px;
+          z-index: 2;
+        }
+
+        .ankh {
+          font-size: 32px;
+          color: #D4AF37;
+          filter: drop-shadow(0 0 8px rgba(212,175,55,0.6));
+          animation: ankhPulse 3s ease-in-out infinite;
+        }
+        @keyframes ankhPulse {
+          0%,100% { filter: drop-shadow(0 0 6px rgba(212,175,55,0.4)); }
+          50%      { filter: drop-shadow(0 0 16px rgba(212,175,55,0.9)); }
+        }
+
+        /* OSIR / IDS text on door */
+        .door-text {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: clamp(28px, 5vw, 44px);
           font-weight: 700;
           color: #D4AF37;
           letter-spacing: 0.3em;
-          line-height: 1;
-          text-shadow: 0 0 60px rgba(212,175,55,0.4), 0 0 120px rgba(212,175,55,0.15);
+          text-shadow:
+            0 0 20px rgba(212,175,55,0.8),
+            0 0 40px rgba(212,175,55,0.4),
+            0 2px 4px rgba(0,0,0,0.8);
         }
-        .brand-sub {
-          font-family: 'Inter', sans-serif;
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.6em;
+
+        .scarab {
+          font-size: 24px;
+          color: #D4AF37;
+          opacity: 0.7;
+        }
+
+        .center-glyphs {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 6px;
+        }
+        .center-glyphs span {
+          color: rgba(212,175,55,0.35);
+          font-size: 12px;
+        }
+
+        /* Knobs */
+        .knob {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: radial-gradient(circle at 35% 35%, #f0d060, #D4AF37 50%, #8a6e20);
+          box-shadow: 0 0 8px rgba(212,175,55,0.6), inset 0 1px 2px rgba(255,255,255,0.3);
+        }
+        .knob-r { right: 10px; }
+        .knob-l { left: 10px; }
+
+        /* Center seam */
+        .door-seam {
+          width: 3px;
+          height: clamp(380px, 60vh, 560px);
+          background: linear-gradient(to bottom, #D4AF37, #8a6e20, #D4AF37);
+          position: relative;
+          z-index: 5;
+          flex-shrink: 0;
+        }
+        .seam-glow {
+          position: absolute;
+          inset: 0;
+          background: rgba(212,175,55,0.3);
+          filter: blur(4px);
+          animation: seamGlow 2s ease-in-out infinite;
+        }
+        @keyframes seamGlow {
+          0%,100% { opacity: 0.3; }
+          50%      { opacity: 1; }
+        }
+
+        /* Bottom step */
+        .door-step {
+          width: 100%;
+          background: linear-gradient(to bottom, #2a1f08, #1a1308);
+          border: 1px solid #D4AF37;
+          border-top: 2px solid #D4AF37;
+          padding: 8px;
+        }
+        .step-glyphs {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+        }
+        .step-glyphs span {
           color: rgba(212,175,55,0.5);
-          text-transform: uppercase;
+          font-size: 12px;
         }
-        .divider-line {
-          width: 80px;
-          height: 1px;
-          background: linear-gradient(to right, transparent, #D4AF37, transparent);
-          margin: 8px 0;
-        }
-        .enter-btn {
+
+        /* ENTER button */
+        .enter-button {
+          margin-top: 28px;
           display: flex;
           align-items: center;
-          gap: 14px;
-          padding: 16px 48px;
-          border: 1px solid rgba(212,175,55,0.5);
+          gap: 12px;
+          padding: 14px 48px;
+          border: 1px solid rgba(212,175,55,0.6);
           background: transparent;
           color: #D4AF37;
           font-family: 'Inter', sans-serif;
@@ -287,313 +404,82 @@ const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
           cursor: pointer;
           position: relative;
           overflow: hidden;
-          transition: all 0.4s ease;
-          margin-top: 16px;
+          transition: all 0.3s ease;
         }
-        .enter-btn::before {
+        .enter-button::before {
           content: '';
           position: absolute;
           inset: 0;
           background: rgba(212,175,55,0.08);
           transform: scaleX(0);
           transform-origin: left;
-          transition: transform 0.4s ease;
+          transition: transform 0.3s ease;
         }
-        .enter-btn:hover::before { transform: scaleX(1); }
-        .enter-btn:hover {
+        .enter-button:hover::before { transform: scaleX(1); }
+        .enter-button:hover {
           border-color: #D4AF37;
-          box-shadow: 0 0 30px rgba(212,175,55,0.2), inset 0 0 30px rgba(212,175,55,0.05);
-          transform: translateY(-2px);
+          box-shadow: 0 0 24px rgba(212,175,55,0.2);
         }
-        .enter-btn:active { transform: scale(0.98); }
-        .enter-text { position: relative; z-index: 1; }
-        .enter-glyph { font-size: 20px; position: relative; z-index: 1; }
-        .enter-hint {
-          font-family: 'Inter', sans-serif;
-          font-size: 11px;
-          color: rgba(212,175,55,0.25);
-          letter-spacing: 0.3em;
-          text-transform: uppercase;
-          margin-top: 4px;
-        }
+        .enter-glyph { font-size: 20px; }
 
-        /* ===== TEMPLE SCENE ===== */
-        .temple-scene {
-          width: 100%;
-          height: 100%;
-          position: relative;
-          overflow: hidden;
-          background: #02010a;
-          animation: templeReveal 0.8s ease both;
-        }
-        @keyframes templeReveal {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-        .temple-sky {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(ellipse 80% 60% at 50% 20%, #0a0520 0%, #02010a 60%);
-        }
-        .stars { position: absolute; inset: 0; pointer-events: none; }
-        .star {
-          position: absolute;
-          background: #fff;
-          border-radius: 50%;
-          animation: starTwinkle 2s ease-in-out infinite;
-        }
-        @keyframes starTwinkle {
-          0%,100% { opacity: 0.3; }
-          50%      { opacity: 1; }
-        }
-        .moon {
-          position: absolute;
-          top: 8%;
-          right: 15%;
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 35% 35%, #fffbe0, #D4AF37 60%, #a0842a);
-          box-shadow: 0 0 40px rgba(212,175,55,0.4), 0 0 80px rgba(212,175,55,0.15);
-        }
-        .desert-floor {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 28%;
-          background: linear-gradient(to top, #1a1206, #0d0b04, transparent);
-        }
-
-        /* Temple */
-        .temple {
-          position: absolute;
-          bottom: 25%;
-          left: 50%;
-          transform: translateX(-50%);
-          display: flex;
-          align-items: flex-end;
-          gap: 0;
-          animation: templeRise 1s ease both;
-        }
-        @keyframes templeRise {
-          from { opacity: 0; transform: translateX(-50%) translateY(40px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
-        .pillar {
-          width: 28px;
-          background: linear-gradient(to right, #1a1408, #2a2010, #1a1408);
-          border-top: 4px solid #D4AF37;
-          position: relative;
-        }
-        .pillar::after {
-          content: '';
-          position: absolute;
-          top: -12px;
-          left: -6px;
-          right: -6px;
-          height: 12px;
-          background: #D4AF37;
-          opacity: 0.7;
-        }
-        .pillar-far-left  { height: 200px; margin-right: 12px; }
-        .pillar-left      { height: 240px; margin-right: 8px; }
-        .pillar-right     { height: 240px; margin-left: 8px; }
-        .pillar-far-right { height: 200px; margin-left: 12px; }
-
-        .temple-body {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-        .cornice {
-          width: 420px;
-          background: linear-gradient(to bottom, #2a2010, #1a1408);
-          border-top: 3px solid #D4AF37;
-          padding: 8px 0 4px;
-        }
-        .cornice-pattern {
-          display: flex;
-          justify-content: center;
-          gap: 2px;
-          margin-bottom: 6px;
-        }
-        .cornice-block {
-          width: 18px;
-          height: 10px;
-          background: rgba(212,175,55,0.3);
-          border: 1px solid rgba(212,175,55,0.15);
-        }
-        .cornice-frieze {
-          display: flex;
-          justify-content: center;
-          gap: 16px;
-          padding: 0 20px;
-        }
-        .frieze-glyph {
-          color: rgba(212,175,55,0.6);
-          font-size: 14px;
-        }
-
-        .temple-wall {
-          width: 420px;
-          height: 280px;
-          background: linear-gradient(to bottom, #1a1408, #120e04);
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-left: 2px solid rgba(212,175,55,0.1);
-          border-right: 2px solid rgba(212,175,55,0.1);
-        }
-        .wall-glyphs {
-          position: absolute;
-          top: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-          color: rgba(212,175,55,0.2);
-          font-size: 16px;
-        }
-        .left-glyphs  { left: 20px; }
-        .right-glyphs { right: 20px; }
-
-        /* DOOR */
-        .door-frame {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          position: relative;
-        }
-        .door-top-glyph {
-          font-size: 22px;
-          color: #D4AF37;
-          margin-bottom: 4px;
-          filter: drop-shadow(0 0 8px rgba(212,175,55,0.8));
-        }
-        .door-container {
-          width: 100px;
-          height: 160px;
-          position: relative;
-          display: flex;
-          overflow: hidden;
-        }
-        .door-left, .door-right {
-          width: 50%;
-          height: 100%;
-          background: linear-gradient(to bottom, #0d0a04, #050402);
-          border: 1px solid rgba(212,175,55,0.4);
-          position: relative;
-          transition: transform 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+        /* ── DOOR OPEN ANIMATION ── */
+        .ds-open .panel-l,
+        .ds-zoom .panel-l {
           transform-origin: left center;
+          transform: perspective(600px) rotateY(-80deg);
         }
-        .door-right {
+        .ds-open .panel-r,
+        .ds-zoom .panel-r {
           transform-origin: right center;
+          transform: perspective(600px) rotateY(80deg);
         }
-        .door-left::after {
-          content: '';
-          position: absolute;
-          right: 6px;
-          top: 50%;
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: #D4AF37;
-          transform: translateY(-50%);
-          box-shadow: 0 0 6px rgba(212,175,55,0.8);
-        }
-        .door-right::after {
-          content: '';
-          position: absolute;
-          left: 6px;
-          top: 50%;
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: #D4AF37;
-          transform: translateY(-50%);
-          box-shadow: 0 0 6px rgba(212,175,55,0.8);
-        }
-        .door-inner-light {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(ellipse at 50% 50%, rgba(212,175,55,0) 0%, transparent 100%);
-          transition: background 1.4s ease;
-          pointer-events: none;
-          z-index: 2;
-        }
-        .door-step {
-          width: 120px;
-          height: 10px;
-          background: linear-gradient(to bottom, #2a2010, #1a1408);
-          border-top: 2px solid rgba(212,175,55,0.4);
-          margin-top: 2px;
+        .ds-open .seam-glow,
+        .ds-zoom .seam-glow {
+          background: rgba(212,175,55,0.9);
+          filter: blur(12px);
         }
 
-        /* ── DOOR OPEN PHASE ── */
-        .phase-door-open .door-left,
-        .phase-zoom .door-left {
-          transform: perspective(400px) rotateY(-75deg);
+        /* ── ZOOM ANIMATION ── */
+        .ds-zoom .the-door {
+          animation: zoomThrough 1.6s cubic-bezier(0.4,0,0.2,1) forwards;
         }
-        .phase-door-open .door-right,
-        .phase-zoom .door-right {
-          transform: perspective(400px) rotateY(75deg);
+        @keyframes zoomThrough {
+          from { transform: scale(1); opacity: 1; }
+          to   { transform: scale(10); opacity: 0; }
         }
-        .phase-door-open .door-inner-light,
-        .phase-zoom .door-inner-light {
-          background: radial-gradient(ellipse at 50% 50%, rgba(212,175,55,0.6) 0%, rgba(212,175,55,0.1) 50%, transparent 80%);
+        .ds-zoom .ds-bg,
+        .ds-zoom .torch {
+          animation: bgFade 1.6s ease forwards;
         }
-
-        /* ── ZOOM PHASE ── */
-        .phase-zoom .temple-scene,
-        .phase-zoom {
-          animation: zoomIn 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        .phase-zoom .temple {
-          animation: templeZoom 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        @keyframes templeZoom {
-          from { transform: translateX(-50%) scale(1); }
-          to   { transform: translateX(-50%) scale(8); opacity: 0; }
-        }
-        .phase-zoom .temple-sky,
-        .phase-zoom .stars,
-        .phase-zoom .moon,
-        .phase-zoom .desert-floor {
-          animation: fadeOutBg 1.8s ease forwards;
-        }
-        @keyframes fadeOutBg {
+        @keyframes bgFade {
           from { opacity: 1; }
           to   { opacity: 0; }
         }
 
-        /* Zoom darkness overlay */
-        .zoom-darkness {
+        /* Darkness overlay during zoom */
+        .zoom-overlay {
           position: absolute;
           inset: 0;
           background: #000;
           opacity: 0;
           pointer-events: none;
-          transition: opacity 0s;
         }
-        .phase-zoom .zoom-darkness {
-          opacity: 0;
-          animation: darknessIn 1.8s ease 0.6s forwards;
+        .ds-zoom .zoom-overlay {
+          animation: darkIn 1.6s ease 0.4s forwards;
         }
-        @keyframes darknessIn {
+        @keyframes darkIn {
           from { opacity: 0; }
           to   { opacity: 1; }
         }
 
-        /* ===== TOTAL DARKNESS ===== */
-        .total-darkness {
+        /* ── TOTAL DARKNESS ── */
+        .total-dark {
           position: fixed;
           inset: 0;
           background: #000;
-          z-index: 9999;
-          animation: finalFadeOut 1.4s ease 0.5s forwards;
+          animation: finalOut 1.2s ease 0.3s forwards;
         }
-        @keyframes finalFadeOut {
+        @keyframes finalOut {
           from { opacity: 1; }
           to   { opacity: 0; }
         }
