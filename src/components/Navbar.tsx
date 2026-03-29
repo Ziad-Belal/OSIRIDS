@@ -6,15 +6,15 @@ import { useAuth } from '../context/AuthContext';
 import AuthModal from 'C:/Users/Ziad/OneDrive/Documents/OSIRIDS/src/components/Authmodal.tsx';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen]               = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode]           = useState<'login' | 'signup'>('login');
-  const [showUserMenu, setShowUserMenu]   = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const { totalItems }                               = useCart();
+  const { totalItems } = useCart();
   const { user, profile, isAdmin, signOut, loading } = useAuth();
 
-  const openLogin  = () => { setAuthMode('login');  setShowAuthModal(true); setIsOpen(false); };
+  const openLogin = () => { setAuthMode('login'); setShowAuthModal(true); setIsOpen(false); };
   const openSignup = () => { setAuthMode('signup'); setShowAuthModal(true); setIsOpen(false); };
   const handleSignOut = async () => { await signOut(); setShowUserMenu(false); };
 
@@ -36,12 +36,6 @@ const Navbar = () => {
 
           {/* Desktop links */}
           <div className="hidden md:flex items-center gap-10">
-            <Link to="/" className="text-[11px] font-bold tracking-[0.25em] text-white/60 hover:text-pharoic-gold transition-colors">
-              COLLECTION
-            </Link>
-            <Link to="/about" className="text-[11px] font-bold tracking-[0.25em] text-white/60 hover:text-pharoic-gold transition-colors">
-              OUR STORY
-            </Link>
             {isAdmin && (
               <Link to="/admin" className="text-[11px] font-bold tracking-[0.25em] text-pharoic-gold border border-pharoic-gold/40 px-3 py-1 hover:bg-pharoic-gold hover:text-pharoic-black transition-all">
                 ⚙ ADMIN
@@ -94,7 +88,7 @@ const Navbar = () => {
                   </div>
                 ) : (
                   <>
-                    <button onClick={openLogin}  className="text-[11px] font-bold tracking-widest text-white/50 hover:text-white transition-colors">SIGN IN</button>
+                    <button onClick={openLogin} className="text-[11px] font-bold tracking-widest text-white/50 hover:text-white transition-colors">SIGN IN</button>
                     <button onClick={openSignup} className="btn-primary text-[11px] py-2 px-4 font-bold tracking-widest">JOIN</button>
                   </>
                 )}
@@ -110,8 +104,6 @@ const Navbar = () => {
         {/* Mobile */}
         {isOpen && (
           <div className="md:hidden bg-pharoic-black border-b border-white/10 py-8 px-6 flex flex-col gap-6 animate-fade-up">
-            <Link to="/"      onClick={() => setIsOpen(false)} className="text-base font-serif font-bold tracking-widest hover:text-pharoic-gold transition-colors">COLLECTION</Link>
-            <Link to="/about" onClick={() => setIsOpen(false)} className="text-base font-serif font-bold tracking-widest hover:text-pharoic-gold transition-colors">OUR STORY</Link>
             {isAdmin && <Link to="/admin" onClick={() => setIsOpen(false)} className="text-base font-serif font-bold tracking-widest text-pharoic-gold">⚙ ADMIN</Link>}
             <div className="border-t border-white/10 pt-5">
               {user ? (
@@ -121,7 +113,7 @@ const Navbar = () => {
                 </div>
               ) : (
                 <div className="flex gap-3">
-                  <button onClick={openLogin}  className="btn-outline text-[11px] font-bold tracking-widest flex-1 py-3">SIGN IN</button>
+                  <button onClick={openLogin} className="btn-outline text-[11px] font-bold tracking-widest flex-1 py-3">SIGN IN</button>
                   <button onClick={openSignup} className="btn-primary text-[11px] font-bold tracking-widest flex-1 py-3">JOIN</button>
                 </div>
               )}
