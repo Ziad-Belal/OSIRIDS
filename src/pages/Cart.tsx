@@ -92,7 +92,7 @@ const Cart = () => {
 
       // 3 ── Send Telegram notification to admin ────────────
       const BOT_TOKEN = '8327094438:AAG4DdWj0Z7TMpukkZRKB_SSd8CoK_BXQe0';
-      const CHAT_ID   = '6671717853';
+      const CHAT_ID   = '6523201885';
       const orderId   = orderData.id.slice(0, 8).toUpperCase();
 
       const message = `
