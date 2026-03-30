@@ -6,10 +6,10 @@ import { useCart, Product } from '../context/CartContext';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [added, setAdded]       = useState<string | null>(null);
-  const { addToCart }           = useCart();
-  const navigate                = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [added, setAdded] = useState<string | null>(null);
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     supabase
@@ -44,7 +44,6 @@ const Products = () => {
 
       {/* Header */}
       <div className="text-center space-y-3 animate-fade-up">
-        <p className="text-pharoic-gold text-[10px] font-bold tracking-[0.5em] uppercase">The Collection</p>
         <h1 className="text-4xl md:text-5xl font-serif font-bold text-white tracking-tight">OSIRIDS</h1>
         <div className="w-12 h-px bg-pharoic-gold mx-auto" />
       </div>

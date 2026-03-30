@@ -4,599 +4,345 @@ interface EntryExperienceProps {
   onComplete: () => void;
 }
 
-const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
-  const [phase, setPhase] = useState<
-    'landing' | 'temple' | 'door-open' | 'zoom' | 'darkness' | 'done'
-  >('landing');
+const GLYPHS_A = ['𓂀','𓃭','𓄿','𓅱','𓆣','𓇯','𓈖','𓉐','𓊪','𓋴','𓌀','𓍿','𓎡','𓏏','𓐍','𓑁','𓒀','𓓇','𓔎','𓕍'];
+const GLYPHS_B = ['𓖌','𓗋','𓘊','𓙉','𓚈','𓛇','𓜆','𓝅','𓞄','𓟃','𓠂','𓡁','𓢀','𓣿','𓤾','𓥽','𓦼','𓧻','𓨺','𓩹'];
+const GLYPHS_C = ['𓀀','𓀁','𓀂','𓀃','𓀄','𓀅','𓀆','𓀇','𓀈','𓀉','𓀊','𓀋','𓁀','𓁁','𓁂','𓁃','𓁄','𓁅','𓁆','𓁇'];
+const GLYPHS_D = ['𓂋','𓂌','𓂍','𓂎','𓂏','𓂐','𓂑','𓂒','𓂓','𓂔','𓃀','𓃁','𓃂','𓃃','𓃄','𓃅','𓃆','𓃇','𓃈','𓃉'];
 
-  const handleEnter = () => {
-    setPhase('temple');
-    setTimeout(() => setPhase('door-open'), 2200);
-    setTimeout(() => setPhase('zoom'),      3800);
-    setTimeout(() => setPhase('darkness'),  5400);
-    setTimeout(() => {
-      setPhase('done');
-      onComplete();
-    }, 6800);
-  };
+const rep = (arr: string[], n: number) =>
+  Array.from({ length: n }, (_, i) => arr[i % arr.length]);
+
+const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
+  const [phase, setPhase] = useState<'door' | 'open' | 'zoom' | 'darkness' | 'done'>('door');
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase('open'),     1200);
+    const t2 = setTimeout(() => setPhase('zoom'),     3000);
+    const t3 = setTimeout(() => setPhase('darkness'), 4600);
+    const t4 = setTimeout(() => { setPhase('done'); onComplete(); }, 5800);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [onComplete]);
+
+  if (phase === 'done') return null;
+
+  const BorderRow = ({ glyphs, n }: { glyphs: string[]; n: number }) => (
+    <>{rep(glyphs, n).map((g, i) => <span key={i}>{g}</span>)}</>
+  );
 
   return (
-    <div
-      className="entry-root"
-      style={{ display: phase === 'done' ? 'none' : 'flex' }}
-    >
-      {/* ── LANDING SCREEN ── */}
-      {phase === 'landing' && (
-        <div className="landing">
-          <div className="landing-bg" />
-          <div className="hieroglyphs-top">
-            {['𓂀','𓃀','𓄿','𓅱','𓆣','𓇯','𓈖','𓉐','𓊪','𓋴','𓌀','𓍿'].map((g, i) => (
-              <span key={i} className="glyph" style={{ animationDelay: `${i * 0.15}s` }}>{g}</span>
-            ))}
-          </div>
-          <div className="landing-content">
-            <div className="eye-of-ra">
-              <svg viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="60" cy="30" rx="58" ry="28" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
-                <circle cx="60" cy="30" r="12" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
-                <circle cx="60" cy="30" r="5" fill="#D4AF37"/>
-                <path d="M60 42 L55 55 L60 52 L65 55 Z" fill="#D4AF37"/>
-                <line x1="2" y1="30" x2="20" y2="30" stroke="#D4AF37" strokeWidth="1"/>
-                <line x1="100" y1="30" x2="118" y2="30" stroke="#D4AF37" strokeWidth="1"/>
-              </svg>
-            </div>
-            <div className="brand-name">OSIRIDS</div>
-            <div className="brand-sub">PHAROIC CLOTHING</div>
-            <div className="divider-line" />
-            <button className="enter-btn" onClick={handleEnter}>
-              <span className="enter-text">ENTER</span>
-              <span className="enter-glyph">𓂀</span>
-            </button>
-            <p className="enter-hint">The gates of legacy await</p>
-          </div>
-          <div className="hieroglyphs-bottom">
-            {['𓏏','𓎡','𓐍','𓑁','𓒀','𓓇','𓔎','𓕍','𓖌','𓗋','𓘊','𓙉'].map((g, i) => (
-              <span key={i} className="glyph" style={{ animationDelay: `${i * 0.15 + 0.5}s` }}>{g}</span>
-            ))}
-          </div>
-          <div className="sand-overlay" />
-        </div>
-      )}
+    <div className="oe-root">
+      {(phase === 'door' || phase === 'open' || phase === 'zoom') && (
+        <div className={`oe-scene oe-${phase}`}>
+          <div className="oe-bg" />
 
-      {/* ── TEMPLE + DOOR ANIMATION ── */}
-      {(phase === 'temple' || phase === 'door-open' || phase === 'zoom') && (
-        <div className={`temple-scene phase-${phase}`}>
-          {/* Sky / background */}
-          <div className="temple-sky" />
+          <div className="oe-door">
 
-          {/* Stars */}
-          <div className="stars">
-            {[...Array(60)].map((_, i) => (
-              <div key={i} className="star" style={{
-                left:  `${Math.random() * 100}%`,
-                top:   `${Math.random() * 60}%`,
-                width: `${Math.random() * 2 + 1}px`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${Math.random() * 2 + 2}s`,
-              }} />
-            ))}
-          </div>
-
-          {/* Moon */}
-          <div className="moon" />
-
-          {/* Desert floor */}
-          <div className="desert-floor" />
-
-          {/* Temple structure */}
-          <div className="temple">
-            {/* Pillars left */}
-            <div className="pillar pillar-far-left" />
-            <div className="pillar pillar-left" />
-
-            {/* Main temple body */}
-            <div className="temple-body">
-              {/* Top cornice */}
-              <div className="cornice">
-                <div className="cornice-pattern">
-                  {[...Array(20)].map((_, i) => (
-                    <div key={i} className="cornice-block" />
-                  ))}
-                </div>
-                <div className="cornice-frieze">
-                  {['𓂀','𓃭','𓄿','𓅱','𓆣','𓇯','𓈖'].map((g, i) => (
-                    <span key={i} className="frieze-glyph">{g}</span>
-                  ))}
-                </div>
+            {/* ══ LEFT PANEL ══ */}
+            <div className="oe-panel oe-panel-l">
+              <div className="oe-border-top">
+                <BorderRow glyphs={GLYPHS_A} n={24} />
               </div>
-
-              {/* Temple wall */}
-              <div className="temple-wall">
-                {/* Wall hieroglyphs */}
-                <div className="wall-glyphs left-glyphs">
-                  {['𓂀','𓃀','𓄿','𓅱','𓆣','𓇯','𓈖','𓉐'].map((g, i) => (
-                    <span key={i}>{g}</span>
-                  ))}
+              <div className="oe-middle">
+                <div className="oe-col-left">
+                  <BorderRow glyphs={GLYPHS_B} n={28} />
                 </div>
-                <div className="wall-glyphs right-glyphs">
-                  {['𓊪','𓋴','𓌀','𓍿','𓎡','𓏏','𓐍','𓑁'].map((g, i) => (
-                    <span key={i}>{g}</span>
-                  ))}
-                </div>
-
-                {/* THE DOOR */}
-                <div className="door-frame">
-                  <div className="door-top-glyph">𓂀</div>
-                  <div className="door-container">
-                    <div className="door-left" />
-                    <div className="door-right" />
-                    {/* Inner glow when opening */}
-                    <div className="door-inner-light" />
+                <div className="oe-center-area">
+                  <div className="oe-inner-frame">
+                    <div className="oe-inner-top-row">
+                      <BorderRow glyphs={GLYPHS_C} n={8} />
+                    </div>
+                    <div className="oe-content">
+                      <div className="oe-ankh">☥</div>
+                      <div className="oe-word">OSIR</div>
+                      <div className="oe-mini-glyphs">
+                        <BorderRow glyphs={GLYPHS_D} n={10} />
+                      </div>
+                      <div className="oe-scarab">𓆣</div>
+                      <div className="oe-mini-glyphs">
+                        <BorderRow glyphs={GLYPHS_A} n={8} />
+                      </div>
+                    </div>
+                    <div className="oe-inner-bottom-row">
+                      <BorderRow glyphs={GLYPHS_C} n={8} />
+                    </div>
                   </div>
-                  <div className="door-step" />
+                </div>
+                <div className="oe-col-right">
+                  <BorderRow glyphs={GLYPHS_C} n={28} />
                 </div>
               </div>
+              <div className="oe-border-bottom">
+                <BorderRow glyphs={GLYPHS_B} n={24} />
+              </div>
+              <div className="oe-knob oe-knob-r"><span>𓆣</span></div>
             </div>
 
-            {/* Pillars right */}
-            <div className="pillar pillar-right" />
-            <div className="pillar pillar-far-right" />
+            {/* ══ SEAM ══ */}
+            <div className="oe-seam"><div className="oe-seam-glow" /></div>
+
+            {/* ══ RIGHT PANEL ══ */}
+            <div className="oe-panel oe-panel-r">
+              <div className="oe-border-top">
+                <BorderRow glyphs={GLYPHS_B} n={24} />
+              </div>
+              <div className="oe-middle">
+                <div className="oe-col-left">
+                  <BorderRow glyphs={GLYPHS_D} n={28} />
+                </div>
+                <div className="oe-center-area">
+                  <div className="oe-inner-frame">
+                    <div className="oe-inner-top-row">
+                      <BorderRow glyphs={GLYPHS_D} n={8} />
+                    </div>
+                    <div className="oe-content">
+                      <div className="oe-ankh">☥</div>
+                      <div className="oe-word">IDS</div>
+                      <div className="oe-mini-glyphs">
+                        <BorderRow glyphs={GLYPHS_C} n={10} />
+                      </div>
+                      <div className="oe-scarab">𓆣</div>
+                      <div className="oe-mini-glyphs">
+                        <BorderRow glyphs={GLYPHS_B} n={8} />
+                      </div>
+                    </div>
+                    <div className="oe-inner-bottom-row">
+                      <BorderRow glyphs={GLYPHS_D} n={8} />
+                    </div>
+                  </div>
+                </div>
+                <div className="oe-col-right">
+                  <BorderRow glyphs={GLYPHS_A} n={28} />
+                </div>
+              </div>
+              <div className="oe-border-bottom">
+                <BorderRow glyphs={GLYPHS_A} n={24} />
+              </div>
+              <div className="oe-knob oe-knob-l"><span>𓆣</span></div>
+            </div>
           </div>
 
-          {/* Zoom darkness overlay */}
-          <div className="zoom-darkness" />
+          <div className="oe-overlay" />
         </div>
       )}
 
-      {/* ── TOTAL DARKNESS ── */}
-      {phase === 'darkness' && (
-        <div className="total-darkness" />
-      )}
+      {phase === 'darkness' && <div className="oe-total-dark" />}
 
       <style>{`
-        /* ===== ROOT ===== */
-        .entry-root {
-          position: fixed;
-          inset: 0;
-          z-index: 9999;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          background: #050505;
+        .oe-root {
+          position: fixed; inset: 0; z-index: 9999;
+          background: #000; overflow: hidden;
         }
 
-        /* ===== LANDING ===== */
-        .landing {
+        .oe-scene {
+          position: absolute; inset: 0;
+          display: flex; align-items: center; justify-content: center;
+          animation: oeFadeIn 0.6s ease both;
+        }
+        @keyframes oeFadeIn { from{opacity:0} to{opacity:1} }
+
+        .oe-bg {
+          position: absolute; inset: 0;
+          background: radial-gradient(ellipse 120% 120% at 50% 50%, #0c0800 0%, #000 65%);
+        }
+
+        /* ── DOOR ── */
+        .oe-door {
+          position: relative; z-index: 2;
+          display: flex;
+          width: 100vw; height: 100vh;
+        }
+
+        /* ── PANELS ── */
+        .oe-panel {
+          flex: 1;
+          display: flex; flex-direction: column;
+          background: #080600;
+          position: relative;
+          transition: transform 1.6s cubic-bezier(0.4,0,0.2,1);
+          overflow: hidden;
+        }
+        .oe-panel-l { transform-origin: left center; }
+        .oe-panel-r { transform-origin: right center; }
+
+        .oe-open .oe-panel-l,
+        .oe-zoom  .oe-panel-l { transform: perspective(1600px) rotateY(-88deg); }
+        .oe-open .oe-panel-r,
+        .oe-zoom  .oe-panel-r { transform: perspective(1600px) rotateY(88deg); }
+
+        /* ── TOP / BOTTOM BORDERS ── */
+        .oe-border-top, .oe-border-bottom {
           width: 100%;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          overflow: hidden;
-          background: radial-gradient(ellipse at 50% 40%, #0d0a00 0%, #050505 70%);
+          display: flex; flex-wrap: wrap;
+          justify-content: center; align-items: center;
+          gap: 1px; padding: 5px 3px;
+          background: #110e00;
+          flex-shrink: 0;
         }
-        .landing-bg {
-          position: absolute;
-          inset: 0;
-          background:
-            radial-gradient(ellipse 80% 50% at 50% 60%, rgba(212,175,55,0.04) 0%, transparent 70%),
-            repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 80px,
-              rgba(212,175,55,0.015) 80px,
-              rgba(212,175,55,0.015) 81px
-            ),
-            repeating-linear-gradient(
-              90deg,
-              transparent,
-              transparent 80px,
-              rgba(212,175,55,0.015) 80px,
-              rgba(212,175,55,0.015) 81px
-            );
-        }
-        .sand-overlay {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 120px;
-          background: linear-gradient(to top, rgba(212,175,55,0.06), transparent);
-          pointer-events: none;
-        }
-        .hieroglyphs-top, .hieroglyphs-bottom {
-          position: absolute;
-          left: 0; right: 0;
-          display: flex;
-          justify-content: center;
-          gap: 24px;
-          padding: 0 20px;
-        }
-        .hieroglyphs-top  { top: 24px; }
-        .hieroglyphs-bottom { bottom: 24px; }
-        .glyph {
-          color: rgba(212,175,55,0.25);
-          font-size: 20px;
-          animation: glyphPulse 3s ease-in-out infinite;
-        }
-        @keyframes glyphPulse {
-          0%,100% { opacity: 0.2; }
-          50%      { opacity: 0.6; }
-        }
-        .landing-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 20px;
-          z-index: 2;
-          animation: landingReveal 1.2s ease both;
-        }
-        @keyframes landingReveal {
-          from { opacity: 0; transform: translateY(30px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .eye-of-ra {
-          width: 140px;
-          height: 70px;
-          animation: eyeGlow 3s ease-in-out infinite;
-          filter: drop-shadow(0 0 16px rgba(212,175,55,0.6));
-        }
-        @keyframes eyeGlow {
-          0%,100% { filter: drop-shadow(0 0 8px rgba(212,175,55,0.4)); }
-          50%      { filter: drop-shadow(0 0 24px rgba(212,175,55,0.9)); }
-        }
-        .brand-name {
-          font-family: 'Playfair Display', serif;
-          font-size: clamp(64px, 14vw, 128px);
-          font-weight: 700;
+        .oe-border-top  { border-top: 2.5px solid #D4AF37; border-bottom: 1px solid rgba(212,175,55,0.35); }
+        .oe-border-bottom { border-bottom: 2.5px solid #D4AF37; border-top: 1px solid rgba(212,175,55,0.35); }
+        .oe-border-top span, .oe-border-bottom span {
           color: #D4AF37;
-          letter-spacing: 0.3em;
-          line-height: 1;
-          text-shadow: 0 0 60px rgba(212,175,55,0.4), 0 0 120px rgba(212,175,55,0.15);
+          font-size: clamp(9px, 1.5vw, 17px);
+          line-height: 1; opacity: 0.85;
+          text-shadow: 0 0 4px rgba(212,175,55,0.4);
         }
-        .brand-sub {
-          font-family: 'Inter', sans-serif;
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.6em;
-          color: rgba(212,175,55,0.5);
-          text-transform: uppercase;
+
+        /* ── MIDDLE ── */
+        .oe-middle { flex: 1; display: flex; min-height: 0; }
+
+        /* ── SIDE COLUMNS ── */
+        .oe-col-left, .oe-col-right {
+          width: clamp(20px, 3vw, 46px);
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: space-around;
+          padding: 6px 1px;
+          flex-shrink: 0; overflow: hidden;
+          gap: 1px;
+          background: #0e0b00;
         }
-        .divider-line {
-          width: 80px;
-          height: 1px;
-          background: linear-gradient(to right, transparent, #D4AF37, transparent);
-          margin: 8px 0;
-        }
-        .enter-btn {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 16px 48px;
-          border: 1px solid rgba(212,175,55,0.5);
-          background: transparent;
+        .oe-col-left  { border-right: 1.5px solid rgba(212,175,55,0.5); }
+        .oe-col-right { border-left:  1.5px solid rgba(212,175,55,0.5); }
+        .oe-col-left span, .oe-col-right span {
           color: #D4AF37;
-          font-family: 'Inter', sans-serif;
-          font-size: 13px;
-          font-weight: 700;
-          letter-spacing: 0.5em;
-          text-transform: uppercase;
-          cursor: pointer;
-          position: relative;
-          overflow: hidden;
-          transition: all 0.4s ease;
-          margin-top: 16px;
-        }
-        .enter-btn::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: rgba(212,175,55,0.08);
-          transform: scaleX(0);
-          transform-origin: left;
-          transition: transform 0.4s ease;
-        }
-        .enter-btn:hover::before { transform: scaleX(1); }
-        .enter-btn:hover {
-          border-color: #D4AF37;
-          box-shadow: 0 0 30px rgba(212,175,55,0.2), inset 0 0 30px rgba(212,175,55,0.05);
-          transform: translateY(-2px);
-        }
-        .enter-btn:active { transform: scale(0.98); }
-        .enter-text { position: relative; z-index: 1; }
-        .enter-glyph { font-size: 20px; position: relative; z-index: 1; }
-        .enter-hint {
-          font-family: 'Inter', sans-serif;
-          font-size: 11px;
-          color: rgba(212,175,55,0.25);
-          letter-spacing: 0.3em;
-          text-transform: uppercase;
-          margin-top: 4px;
+          font-size: clamp(8px, 1.3vw, 15px);
+          line-height: 1; opacity: 0.75;
+          text-align: center;
         }
 
-        /* ===== TEMPLE SCENE ===== */
-        .temple-scene {
-          width: 100%;
-          height: 100%;
-          position: relative;
-          overflow: hidden;
-          background: #02010a;
-          animation: templeReveal 0.8s ease both;
+        /* ── CENTER AREA ── */
+        .oe-center-area {
+          flex: 1; display: flex;
+          align-items: stretch; justify-content: stretch;
+          padding: clamp(8px, 1.5vw, 20px);
+          min-width: 0;
         }
-        @keyframes templeReveal {
-          from { opacity: 0; }
-          to   { opacity: 1; }
+
+        /* ── INNER FRAME ── */
+        .oe-inner-frame {
+          flex: 1;
+          border: 1.5px solid rgba(212,175,55,0.3);
+          display: flex; flex-direction: column;
+          background: rgba(212,175,55,0.02);
         }
-        .temple-sky {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(ellipse 80% 60% at 50% 20%, #0a0520 0%, #02010a 60%);
+
+        .oe-inner-top-row, .oe-inner-bottom-row {
+          display: flex; flex-wrap: wrap;
+          justify-content: center; gap: 2px;
+          padding: 4px 3px;
+          background: rgba(212,175,55,0.05);
+          flex-shrink: 0;
         }
-        .stars { position: absolute; inset: 0; pointer-events: none; }
-        .star {
-          position: absolute;
-          background: #fff;
+        .oe-inner-top-row  { border-bottom: 1px solid rgba(212,175,55,0.2); }
+        .oe-inner-bottom-row { border-top: 1px solid rgba(212,175,55,0.2); }
+        .oe-inner-top-row span, .oe-inner-bottom-row span {
+          color: rgba(212,175,55,0.55);
+          font-size: clamp(7px, 1.1vw, 13px);
+        }
+
+        /* ── CONTENT ── */
+        .oe-content {
+          flex: 1;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          gap: clamp(6px, 1.8vh, 22px);
+          padding: clamp(10px, 2vh, 28px) 8px;
+        }
+
+        .oe-ankh {
+          font-size: clamp(24px, 4.5vw, 60px);
+          color: #D4AF37; line-height: 1;
+          text-shadow: 0 0 14px rgba(212,175,55,0.7);
+          animation: ankhPulse 3s ease-in-out infinite;
+        }
+        @keyframes ankhPulse {
+          0%,100% { text-shadow: 0 0 8px rgba(212,175,55,0.5); }
+          50%      { text-shadow: 0 0 22px rgba(212,175,55,1), 0 0 44px rgba(212,175,55,0.4); }
+        }
+
+        .oe-word {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: clamp(28px, 5.5vw, 76px);
+          font-weight: 700; color: #D4AF37;
+          letter-spacing: 0.18em; line-height: 1;
+          text-shadow: 0 0 18px rgba(212,175,55,0.9), 0 0 36px rgba(212,175,55,0.4), 0 2px 6px rgba(0,0,0,0.9);
+        }
+
+        .oe-mini-glyphs {
+          display: flex; flex-wrap: wrap;
+          justify-content: center; gap: 3px;
+        }
+        .oe-mini-glyphs span {
+          color: rgba(212,175,55,0.45);
+          font-size: clamp(9px, 1.4vw, 16px);
+        }
+
+        .oe-scarab {
+          font-size: clamp(18px, 2.8vw, 36px);
+          color: #D4AF37; opacity: 0.75; line-height: 1;
+        }
+
+        /* ── KNOBS ── */
+        .oe-knob {
+          position: absolute; top: 50%;
+          transform: translateY(-50%); z-index: 10;
+        }
+        .oe-knob-r { right: clamp(5px, 1.2vw, 18px); }
+        .oe-knob-l { left:  clamp(5px, 1.2vw, 18px); }
+        .oe-knob span {
+          display: flex; align-items: center; justify-content: center;
+          width: clamp(18px, 2.8vw, 36px);
+          height: clamp(18px, 2.8vw, 36px);
           border-radius: 50%;
-          animation: starTwinkle 2s ease-in-out infinite;
+          background: radial-gradient(circle at 35% 30%, #ffe070, #D4AF37 55%, #8a6e20);
+          box-shadow: 0 0 10px rgba(212,175,55,0.8), 0 3px 10px rgba(0,0,0,0.8);
+          font-size: clamp(7px, 1.1vw, 13px);
+          color: #3a2a00;
+          animation: knobGlow 2s ease-in-out infinite;
         }
-        @keyframes starTwinkle {
-          0%,100% { opacity: 0.3; }
-          50%      { opacity: 1; }
-        }
-        .moon {
-          position: absolute;
-          top: 8%;
-          right: 15%;
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 35% 35%, #fffbe0, #D4AF37 60%, #a0842a);
-          box-shadow: 0 0 40px rgba(212,175,55,0.4), 0 0 80px rgba(212,175,55,0.15);
-        }
-        .desert-floor {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 28%;
-          background: linear-gradient(to top, #1a1206, #0d0b04, transparent);
+        @keyframes knobGlow {
+          0%,100% { box-shadow: 0 0 8px rgba(212,175,55,0.6), 0 3px 10px rgba(0,0,0,0.8); }
+          50%      { box-shadow: 0 0 18px rgba(212,175,55,1),   0 3px 10px rgba(0,0,0,0.8); }
         }
 
-        /* Temple */
-        .temple {
-          position: absolute;
-          bottom: 25%;
-          left: 50%;
-          transform: translateX(-50%);
-          display: flex;
-          align-items: flex-end;
-          gap: 0;
-          animation: templeRise 1s ease both;
+        /* ── SEAM ── */
+        .oe-seam {
+          width: clamp(2px, 0.35vw, 5px);
+          background: linear-gradient(to bottom, #D4AF37, #8a6e20 50%, #D4AF37);
+          position: relative; z-index: 5; flex-shrink: 0;
         }
-        @keyframes templeRise {
-          from { opacity: 0; transform: translateX(-50%) translateY(40px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .oe-seam-glow {
+          position: absolute; inset: 0;
+          background: rgba(212,175,55,0.35);
+          filter: blur(3px);
+          animation: seamPulse 2s ease-in-out infinite;
+          transition: all 1.6s ease;
         }
-        .pillar {
-          width: 28px;
-          background: linear-gradient(to right, #1a1408, #2a2010, #1a1408);
-          border-top: 4px solid #D4AF37;
-          position: relative;
-        }
-        .pillar::after {
-          content: '';
-          position: absolute;
-          top: -12px;
-          left: -6px;
-          right: -6px;
-          height: 12px;
-          background: #D4AF37;
-          opacity: 0.7;
-        }
-        .pillar-far-left  { height: 200px; margin-right: 12px; }
-        .pillar-left      { height: 240px; margin-right: 8px; }
-        .pillar-right     { height: 240px; margin-left: 8px; }
-        .pillar-far-right { height: 200px; margin-left: 12px; }
-
-        .temple-body {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-        .cornice {
-          width: 420px;
-          background: linear-gradient(to bottom, #2a2010, #1a1408);
-          border-top: 3px solid #D4AF37;
-          padding: 8px 0 4px;
-        }
-        .cornice-pattern {
-          display: flex;
-          justify-content: center;
-          gap: 2px;
-          margin-bottom: 6px;
-        }
-        .cornice-block {
-          width: 18px;
-          height: 10px;
-          background: rgba(212,175,55,0.3);
-          border: 1px solid rgba(212,175,55,0.15);
-        }
-        .cornice-frieze {
-          display: flex;
-          justify-content: center;
-          gap: 16px;
-          padding: 0 20px;
-        }
-        .frieze-glyph {
-          color: rgba(212,175,55,0.6);
-          font-size: 14px;
+        @keyframes seamPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+        .oe-open .oe-seam-glow,
+        .oe-zoom  .oe-seam-glow {
+          background: rgba(212,175,55,0.9); filter: blur(14px);
         }
 
-        .temple-wall {
-          width: 420px;
-          height: 280px;
-          background: linear-gradient(to bottom, #1a1408, #120e04);
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-left: 2px solid rgba(212,175,55,0.1);
-          border-right: 2px solid rgba(212,175,55,0.1);
-        }
-        .wall-glyphs {
-          position: absolute;
-          top: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-          color: rgba(212,175,55,0.2);
-          font-size: 16px;
-        }
-        .left-glyphs  { left: 20px; }
-        .right-glyphs { right: 20px; }
+        /* ── ZOOM ── */
+        .oe-zoom .oe-door { animation: oeZoom 1.6s cubic-bezier(0.4,0,0.2,1) 0.1s forwards; }
+        @keyframes oeZoom { from{transform:scale(1);opacity:1} to{transform:scale(7);opacity:0} }
+        .oe-zoom .oe-bg { animation: oeBgFade 1.6s ease forwards; }
+        @keyframes oeBgFade { from{opacity:1} to{opacity:0} }
 
-        /* DOOR */
-        .door-frame {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          position: relative;
+        /* ── DARK OVERLAY ── */
+        .oe-overlay {
+          position: absolute; inset: 0; background: #000;
+          opacity: 0; pointer-events: none; z-index: 10;
         }
-        .door-top-glyph {
-          font-size: 22px;
-          color: #D4AF37;
-          margin-bottom: 4px;
-          filter: drop-shadow(0 0 8px rgba(212,175,55,0.8));
-        }
-        .door-container {
-          width: 100px;
-          height: 160px;
-          position: relative;
-          display: flex;
-          overflow: hidden;
-        }
-        .door-left, .door-right {
-          width: 50%;
-          height: 100%;
-          background: linear-gradient(to bottom, #0d0a04, #050402);
-          border: 1px solid rgba(212,175,55,0.4);
-          position: relative;
-          transition: transform 1.4s cubic-bezier(0.4, 0, 0.2, 1);
-          transform-origin: left center;
-        }
-        .door-right {
-          transform-origin: right center;
-        }
-        .door-left::after {
-          content: '';
-          position: absolute;
-          right: 6px;
-          top: 50%;
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: #D4AF37;
-          transform: translateY(-50%);
-          box-shadow: 0 0 6px rgba(212,175,55,0.8);
-        }
-        .door-right::after {
-          content: '';
-          position: absolute;
-          left: 6px;
-          top: 50%;
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: #D4AF37;
-          transform: translateY(-50%);
-          box-shadow: 0 0 6px rgba(212,175,55,0.8);
-        }
-        .door-inner-light {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(ellipse at 50% 50%, rgba(212,175,55,0) 0%, transparent 100%);
-          transition: background 1.4s ease;
-          pointer-events: none;
-          z-index: 2;
-        }
-        .door-step {
-          width: 120px;
-          height: 10px;
-          background: linear-gradient(to bottom, #2a2010, #1a1408);
-          border-top: 2px solid rgba(212,175,55,0.4);
-          margin-top: 2px;
-        }
+        .oe-zoom .oe-overlay { animation: oeDarkIn 1.6s ease 0.3s forwards; }
+        @keyframes oeDarkIn { from{opacity:0} to{opacity:1} }
 
-        /* ── DOOR OPEN PHASE ── */
-        .phase-door-open .door-left,
-        .phase-zoom .door-left {
-          transform: perspective(400px) rotateY(-75deg);
+        /* ── TOTAL DARK ── */
+        .oe-total-dark {
+          position: fixed; inset: 0; background: #000;
+          animation: oeTotalOut 1.2s ease 0.2s forwards;
         }
-        .phase-door-open .door-right,
-        .phase-zoom .door-right {
-          transform: perspective(400px) rotateY(75deg);
-        }
-        .phase-door-open .door-inner-light,
-        .phase-zoom .door-inner-light {
-          background: radial-gradient(ellipse at 50% 50%, rgba(212,175,55,0.6) 0%, rgba(212,175,55,0.1) 50%, transparent 80%);
-        }
-
-        /* ── ZOOM PHASE ── */
-        .phase-zoom .temple-scene,
-        .phase-zoom {
-          animation: zoomIn 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        .phase-zoom .temple {
-          animation: templeZoom 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        @keyframes templeZoom {
-          from { transform: translateX(-50%) scale(1); }
-          to   { transform: translateX(-50%) scale(8); opacity: 0; }
-        }
-        .phase-zoom .temple-sky,
-        .phase-zoom .stars,
-        .phase-zoom .moon,
-        .phase-zoom .desert-floor {
-          animation: fadeOutBg 1.8s ease forwards;
-        }
-        @keyframes fadeOutBg {
-          from { opacity: 1; }
-          to   { opacity: 0; }
-        }
-
-        /* Zoom darkness overlay */
-        .zoom-darkness {
-          position: absolute;
-          inset: 0;
-          background: #000;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0s;
-        }
-        .phase-zoom .zoom-darkness {
-          opacity: 0;
-          animation: darknessIn 1.8s ease 0.6s forwards;
-        }
-        @keyframes darknessIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-
-        /* ===== TOTAL DARKNESS ===== */
-        .total-darkness {
-          position: fixed;
-          inset: 0;
-          background: #000;
-          z-index: 9999;
-          animation: finalFadeOut 1.4s ease 0.5s forwards;
-        }
-        @keyframes finalFadeOut {
-          from { opacity: 1; }
-          to   { opacity: 0; }
-        }
+        @keyframes oeTotalOut { from{opacity:1} to{opacity:0} }
       `}</style>
     </div>
   );
