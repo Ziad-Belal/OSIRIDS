@@ -29,6 +29,12 @@ const Products = () => {
     setTimeout(() => setAdded(null), 1500);
   };
 
+  const handleBuyNow = (e: React.MouseEvent, product: Product) => {
+    e.stopPropagation();
+    addToCart(product);
+    navigate('/cart?checkout=true');
+  };
+
   // Supports JSON array of images or single URL
   const getThumb = (product: Product) => {
     try {
@@ -81,19 +87,30 @@ const Products = () => {
                 />
 
                 {/* Add to cart — stops propagation so it doesn't open detail */}
-                <button
-                  onClick={e => handleAdd(e, product)}
-                  className={`
-                    absolute bottom-0 left-0 right-0 py-3 text-xs font-bold tracking-[0.2em] uppercase
-                    flex items-center justify-center gap-2 transition-all duration-300
+                <div className={
+                  `
+                    absolute bottom-0 left-0 right-0 p-2 grid gap-2 transition-all duration-300
                     ${added === product.id
-                      ? 'bg-white text-pharoic-black opacity-100 translate-y-0'
-                      : 'bg-pharoic-gold text-pharoic-black opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
-                    }
+                    ? 'opacity-100 translate-y-0'
+                    : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
+                  }
                   `}
                 >
-                  {added === product.id ? <>✓ ADDED</> : <><ShoppingBag size={13} /> ADD TO BAG</>}
-                </button>
+                  <button
+                    onClick={e => handleAdd(e, product)}
+                    className={
+                      `w-full py-2 text-[10px] font-bold uppercase flex items-center justify-center gap-2 rounded-sm ${added === product.id ? 'bg-white text-pharoic-black' : 'bg-pharoic-gold text-pharoic-black'}`
+                    }
+                  >
+                    {added === product.id ? <>✓ ADDED</> : <><ShoppingBag size={13} /> ADD TO BAG</>}
+                  </button>
+                  <button
+                    onClick={e => handleBuyNow(e, product)}
+                    className="w-full py-2 text-[10px] font-bold uppercase text-white bg-white/10 hover:bg-white/20 rounded-sm transition-colors"
+                  >
+                    BUY NOW
+                  </button>
+                </div>
               </div>
 
               {/* Info */}

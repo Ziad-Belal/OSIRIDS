@@ -10,10 +10,10 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  const [product, setProduct]     = useState<Product | null>(null);
-  const [loading, setLoading]     = useState(true);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
-  const [added, setAdded]         = useState(false);
+  const [added, setAdded] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -33,6 +33,12 @@ const ProductDetail = () => {
     addToCart(product);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+    addToCart(product);
+    navigate('/cart?checkout=true');
   };
 
   if (loading) return (
@@ -115,9 +121,8 @@ const ProductDetail = () => {
                 <button
                   key={i}
                   onClick={() => setActiveImg(i)}
-                  className={`flex-shrink-0 w-20 aspect-[3/4] overflow-hidden border-2 transition-all ${
-                    activeImg === i ? 'border-pharoic-gold' : 'border-transparent opacity-50 hover:opacity-80'
-                  }`}
+                  className={`flex-shrink-0 w-20 aspect-[3/4] overflow-hidden border-2 transition-all ${activeImg === i ? 'border-pharoic-gold' : 'border-transparent opacity-50 hover:opacity-80'
+                    }`}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
@@ -142,19 +147,26 @@ const ProductDetail = () => {
             <p className="text-white/50 text-sm leading-relaxed">{product.description}</p>
           )}
 
-          <button
-            onClick={handleAdd}
-            className={`w-full py-5 font-bold tracking-[0.2em] text-sm flex items-center justify-center gap-3 transition-all ${
-              added
-                ? 'bg-white text-pharoic-black'
-                : 'btn-primary'
-            }`}
-          >
-            {added
-              ? <>✓ ADDED TO BAG</>
-              : <><ShoppingBag size={18} /> ADD TO BAG</>
-            }
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleAdd}
+              className={`w-full py-5 font-bold tracking-[0.2em] text-sm flex items-center justify-center gap-3 transition-all ${added
+                  ? 'bg-white text-pharoic-black'
+                  : 'btn-primary'
+                }`}
+            >
+              {added
+                ? <>✓ ADDED TO BAG</>
+                : <><ShoppingBag size={18} /> ADD TO BAG</>
+              }
+            </button>
+            <button
+              onClick={handleBuyNow}
+              className="w-full py-5 font-bold tracking-[0.2em] text-sm text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-all"
+            >
+              BUY NOW
+            </button>
+          </div>
 
           <div className="border border-white/5 p-6 space-y-3">
             <p className="text-[10px] font-bold text-pharoic-gold tracking-widest uppercase">Delivery</p>

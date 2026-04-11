@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingBag, ArrowRight, Trash2, Plus, Minus, CheckCircle, Loader, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 
 interface CheckoutForm {
-  phone:   string;
+  phone: string;
   address: string;
-  city:    string;
+  city: string;
   country: string;
-  notes:   string;
+  notes: string;
 }
 
 const emptyForm: CheckoutForm = {
@@ -20,15 +20,17 @@ const emptyForm: CheckoutForm = {
 const Cart = () => {
   const { cartItems, removeFromCart, updateQuantity, subtotal, clearCart } = useCart();
   const { user, profile } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const shipping = cartItems.length > 0 ? 15 : 0;
-  const total    = subtotal + shipping;
+  const total = subtotal + shipping;
 
   const [showCheckout, setShowCheckout] = useState(false);
-  const [form, setForm]   = useState<CheckoutForm>(emptyForm);
+  const [form, setForm] = useState<CheckoutForm>(emptyForm);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
   const [orderSummary, setOrderSummary] = useState<{
     orderId: string;
     customerName: string;
@@ -47,30 +49,37 @@ const Cart = () => {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm(prev => ({ ...prev, [key]: e.target.value }));
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('checkout') === 'true' && cartItems.length > 0) {
+      setShowCheckout(true);
+    }
+  }, [location.search, cartItems.length]);
+
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     // Use profile name/email if logged in, fallback to generic
-    const customerName  = profile?.full_name  || user?.email?.split('@')[0] || 'Customer';
-    const customerEmail = profile?.email       || user?.email               || '';
+    const customerName = profile?.full_name || user?.email?.split('@')[0] || 'Customer';
+    const customerEmail = profile?.email || user?.email || '';
 
     try {
       // 1 ── Save order ──────────────────────────────────────
       const { data: orderData, error: orderErr } = await supabase
         .from('orders')
         .insert([{
-          user_id:       user?.id   || null,
-          status:        'pending',
+          user_id: user?.id || null,
+          status: 'pending',
           total,
           shipping_cost: shipping,
-          full_name:     customerName,
-          email:         customerEmail,
-          address:       form.address,
-          city:          form.city,
-          country:       form.country,
-          notes:         form.notes,
+          full_name: customerName,
+          email: customerEmail,
+          address: form.address,
+          city: form.city,
+          country: form.country,
+          notes: form.notes,
         }])
         .select()
         .single();
@@ -80,20 +89,20 @@ const Cart = () => {
       // 2 ── Save order items ────────────────────────────────
       const { error: itemsErr } = await supabase.from('order_items').insert(
         cartItems.map(item => ({
-          order_id:   orderData.id,
+          order_id: orderData.id,
           product_id: item.id,
-          name:       item.name,
-          price:      item.price,
-          quantity:   item.quantity,
-          image_url:  item.image_url,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image_url: item.image_url,
         }))
       );
       if (itemsErr) throw new Error(itemsErr.message);
 
       // 3 ── Send Telegram notification to admin ────────────
       const BOT_TOKEN = '8327094438:AAG4DdWj0Z7TMpukkZRKB_SSd8CoK_BXQe0';
-      const CHAT_ID   = '6523201885';
-      const orderId   = orderData.id.slice(0, 8).toUpperCase();
+      const CHAT_ID = '6523201885';
+      const orderId = orderData.id.slice(0, 8).toUpperCase();
 
       const message = `
 🏺 *NEW ORDER #${orderId}*
@@ -121,23 +130,23 @@ ${form.notes ? `\n📝 Notes: ${form.notes}` : ''}
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id:    CHAT_ID,
-          text:       message,
+          chat_id: CHAT_ID,
+          text: message,
           parse_mode: 'Markdown',
         }),
       }).catch(err => console.warn('Telegram notification failed:', err));
 
       // Save summary BEFORE clearing cart
       setOrderSummary({
-        orderId:      orderData.id.slice(0, 8).toUpperCase(),
+        orderId: orderData.id.slice(0, 8).toUpperCase(),
         customerName,
-        items:        cartItems.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })),
+        items: cartItems.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })),
         subtotal, shipping, total,
-        phone:   form.phone,
+        phone: form.phone,
         address: form.address,
-        city:    form.city,
+        city: form.city,
         country: form.country,
-        notes:   form.notes,
+        notes: form.notes,
       });
 
       clearCart();
@@ -226,7 +235,7 @@ ${form.notes ? `\n📝 Notes: ${form.notes}` : ''}
         {/* Note */}
         <div className="text-center space-y-2">
           <p className="text-white/30 text-xs leading-relaxed">
-            Payment is collected upon delivery.<br/>
+            Payment is collected upon delivery.<br />
             We will contact you shortly to confirm your order.
           </p>
         </div>
@@ -281,7 +290,7 @@ ${form.notes ? `\n📝 Notes: ${form.notes}` : ''}
                     <div className="flex items-center border border-white/10 p-2 gap-4">
                       <button onClick={() => updateQuantity(item.id, -1)} className="text-white/40 hover:text-white transition-colors"><Minus size={13} /></button>
                       <span className="text-sm font-bold text-white w-4 text-center">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id,  1)} className="text-white/40 hover:text-white transition-colors"><Plus  size={13} /></button>
+                      <button onClick={() => updateQuantity(item.id, 1)} className="text-white/40 hover:text-white transition-colors"><Plus size={13} /></button>
                     </div>
                     <button onClick={() => removeFromCart(item.id)} className="text-white/20 hover:text-red-500 transition-colors flex items-center gap-2 text-xs font-bold tracking-widest uppercase">
                       <Trash2 size={14} /> REMOVE
@@ -321,7 +330,7 @@ ${form.notes ? `\n📝 Notes: ${form.notes}` : ''}
                 <p className="text-pharoic-gold text-[10px] font-bold tracking-[0.4em] uppercase">Checkout</p>
                 <h2 className="text-2xl font-serif font-bold text-white uppercase mt-1">Delivery Details</h2>
               </div>
-              <button onClick={() => setShowCheckout(false)} className="text-white/30 hover:text-white transition-colors">
+              <button onClick={() => { setShowCheckout(false); navigate('/cart', { replace: true }); }} className="text-white/30 hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -375,11 +384,11 @@ ${form.notes ? `\n📝 Notes: ${form.notes}` : ''}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>City *</label>
-                    <input type="text" value={form.city}    onChange={set('city')}    className={inp} placeholder="Cairo"  required />
+                    <input type="text" value={form.city} onChange={set('city')} className={inp} placeholder="Cairo" required />
                   </div>
                   <div>
                     <label className={lbl}>Country *</label>
-                    <input type="text" value={form.country} onChange={set('country')} className={inp} placeholder="Egypt"  required />
+                    <input type="text" value={form.country} onChange={set('country')} className={inp} placeholder="Egypt" required />
                   </div>
                 </div>
               </div>
