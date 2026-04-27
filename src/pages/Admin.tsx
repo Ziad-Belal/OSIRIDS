@@ -7,10 +7,12 @@ import {
   Settings, Save, X, FileText,
   Upload, RefreshCw, Eye, LogOut,
 } from 'lucide-react';
+import { ALL_SIZES, ALL_COLOURS } from '../context/CartContext';
 
 interface Product {
   id: string; name: string; price: number;
   description: string; image_url: string; category: string;
+  sizes: string[]; colours: string[];
 }
 interface Content {
   id: string; page: string; section: string; content: string; image_url?: string;
@@ -47,6 +49,13 @@ const SECTION_PRESETS: Record<string, { section: string; label: string; type: 't
   ],
 };
 
+// Colour hex map for swatches in admin
+const colourHex: Record<string, string> = {
+  Black: '#0A0A0A', White: '#F5F5F5', Beige: '#E8D5B7',
+  Navy: '#001F5B', Olive: '#556B2F', Camel: '#C19A6B',
+  Charcoal: '#36454F', Burgundy: '#800020',
+};
+
 const Admin = () => {
   const { user, isAdmin, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -63,10 +72,10 @@ const Admin = () => {
   const [selectedPage, setSelectedPage] = useState('home');
 
   const emptyForm = { name: '', price: 0, description: '', image_url: '', category: '' };
-  const [form, setForm] = useState(emptyForm);
-
-  // Multiple images stored as array
+  const [form, setForm]                   = useState(emptyForm);
   const [productImages, setProductImages] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes]     = useState<string[]>([]);
+  const [selectedColours, setSelectedColours] = useState<string[]>([]);
 
   const [quickEdit, setQuickEdit] = useState<Record<string, { content: string; image_url: string }>>({});
 
@@ -104,21 +113,13 @@ const Admin = () => {
     setContent(data || []);
   };
 
-  // ── Upload image — tries Storage, falls back to base64 ────
   const uploadImage = async (file: File): Promise<string> => {
     try {
       const ext      = file.name.split('.').pop();
       const fileName = `${Date.now()}.${ext}`;
-      const { data, error } = await supabase.storage
-        .from('images')
-        .upload(fileName, file, { upsert: true });
-
-      if (!error && data) {
-        return supabase.storage.from('images').getPublicUrl(fileName).data.publicUrl;
-      }
+      const { data, error } = await supabase.storage.from('images').upload(fileName, file, { upsert: true });
+      if (!error && data) return supabase.storage.from('images').getPublicUrl(fileName).data.publicUrl;
     } catch {}
-
-    // Fallback to base64
     return new Promise(resolve => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
@@ -138,9 +139,7 @@ const Admin = () => {
     }
   };
 
-  const removeImage = (index: number) => {
-    setProductImages(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeImage = (index: number) => setProductImages(prev => prev.filter((_, i) => i !== index));
 
   const moveImage = (from: number, to: number) => {
     setProductImages(prev => {
@@ -151,17 +150,24 @@ const Admin = () => {
     });
   };
 
+  const toggleSize = (s: string) =>
+    setSelectedSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+
+  const toggleColour = (c: string) =>
+    setSelectedColours(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+
   // ── Product CRUD ──────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (productImages.length === 0) { showFlash('✗ Add at least one photo'); return; }
 
-    // Store images as JSON array string
-    const imageValue = productImages.length === 1
-      ? productImages[0]
-      : JSON.stringify(productImages);
-
-    const payload = { ...form, image_url: imageValue };
+    const imageValue = productImages.length === 1 ? productImages[0] : JSON.stringify(productImages);
+    const payload = {
+      ...form,
+      image_url: imageValue,
+      sizes:     selectedSizes,
+      colours:   selectedColours,
+    };
 
     if (editingId) {
       await supabase.from('products').update(payload).eq('id', editingId);
@@ -170,23 +176,30 @@ const Admin = () => {
       await supabase.from('products').insert([payload]);
       showFlash('✓ Product published');
     }
+    resetForm();
+    await fetchProducts();
+  };
+
+  const resetForm = () => {
     setForm(emptyForm);
     setProductImages([]);
+    setSelectedSizes([]);
+    setSelectedColours([]);
     setShowForm(false);
     setEditingId(null);
-    await fetchProducts();
   };
 
   const handleEdit = (p: Product) => {
     setEditingId(p.id);
     setForm({ name: p.name, price: p.price, description: p.description, image_url: p.image_url, category: p.category });
-    // Parse existing images
     try {
       const parsed = JSON.parse(p.image_url);
       setProductImages(Array.isArray(parsed) ? parsed : [p.image_url]);
     } catch {
       setProductImages(p.image_url ? [p.image_url] : []);
     }
+    setSelectedSizes(p.sizes   || []);
+    setSelectedColours(p.colours || []);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -200,8 +213,8 @@ const Admin = () => {
 
   // ── Content save ──────────────────────────────────────────
   const saveSection = async (page: string, section: string) => {
-    const key     = `${page}__${section}`;
-    const val     = quickEdit[key] || { content: '', image_url: '' };
+    const key      = `${page}__${section}`;
+    const val      = quickEdit[key] || { content: '', image_url: '' };
     setSavingKey(key);
     const existing = content.find(c => c.page === page && c.section === section);
     if (existing) {
@@ -292,7 +305,7 @@ const Admin = () => {
                 <p className="text-white/30 text-sm mt-1">{products.length} items</p>
               </div>
               <button
-                onClick={() => { setShowForm(!showForm); setEditingId(null); setForm(emptyForm); setProductImages([]); }}
+                onClick={() => { if (showForm && !editingId) { resetForm(); } else { resetForm(); setShowForm(true); } }}
                 className="btn-primary flex items-center gap-2 text-sm font-bold tracking-widest"
               >
                 {showForm && !editingId ? <><X size={15} /> CANCEL</> : <><Plus size={15} /> ADD PRODUCT</>}
@@ -309,71 +322,34 @@ const Admin = () => {
                 {/* Photos */}
                 <div className="space-y-3">
                   <label className={lbl}>Photos * {productImages.length > 0 && <span className="text-white/30 normal-case">({productImages.length} added — first is the cover)</span>}</label>
-
-                  {/* Photo grid */}
                   {productImages.length > 0 && (
                     <div className="flex gap-3 flex-wrap">
                       {productImages.map((img, i) => (
                         <div key={i} className="relative w-24 h-32 border border-white/10 overflow-hidden rounded-sm group">
                           <img src={img} alt="" className="w-full h-full object-cover" />
-                          {/* Cover badge */}
                           {i === 0 && (
-                            <span className="absolute top-1 left-1 bg-pharoic-gold text-pharoic-black text-[8px] font-bold px-1.5 py-0.5 tracking-wider">
-                              COVER
-                            </span>
+                            <span className="absolute top-1 left-1 bg-pharoic-gold text-pharoic-black text-[8px] font-bold px-1.5 py-0.5 tracking-wider">COVER</span>
                           )}
-                          {/* Actions */}
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                             {i > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => moveImage(i, i - 1)}
-                                className="text-white hover:text-pharoic-gold text-xs font-bold"
-                                title="Move left"
-                              >
-                                ←
-                              </button>
+                              <button type="button" onClick={() => moveImage(i, i - 1)} className="text-white hover:text-pharoic-gold text-xs font-bold" title="Move left">←</button>
                             )}
-                            <button
-                              type="button"
-                              onClick={() => removeImage(i)}
-                              className="text-red-400 hover:text-red-300"
-                            >
-                              <X size={14} />
-                            </button>
+                            <button type="button" onClick={() => removeImage(i)} className="text-red-400 hover:text-red-300"><X size={14} /></button>
                             {i < productImages.length - 1 && (
-                              <button
-                                type="button"
-                                onClick={() => moveImage(i, i + 1)}
-                                className="text-white hover:text-pharoic-gold text-xs font-bold"
-                                title="Move right"
-                              >
-                                →
-                              </button>
+                              <button type="button" onClick={() => moveImage(i, i + 1)} className="text-white hover:text-pharoic-gold text-xs font-bold" title="Move right">→</button>
                             )}
                           </div>
                         </div>
                       ))}
-
-                      {/* Add more */}
                       <label className={`w-24 h-32 border-2 border-dashed border-white/10 hover:border-pharoic-gold/40 flex flex-col items-center justify-center cursor-pointer transition-all ${uploadingImg ? 'opacity-50 pointer-events-none' : ''}`}>
-                        {uploadingImg
-                          ? <RefreshCw size={18} className="animate-spin text-pharoic-gold" />
-                          : <Plus size={18} className="text-white/30" />
-                        }
+                        {uploadingImg ? <RefreshCw size={18} className="animate-spin text-pharoic-gold" /> : <Plus size={18} className="text-white/30" />}
                         <span className="text-[9px] text-white/20 mt-1 font-bold tracking-widest uppercase">Add more</span>
                         <input type="file" accept="image/*" multiple className="hidden" onChange={e => handleImageFiles(e.target.files)} />
                       </label>
                     </div>
                   )}
-
-                  {/* Initial upload (no images yet) */}
                   {productImages.length === 0 && (
-                    <label className={`
-                      flex flex-col items-center justify-center w-full h-48 border-2 border-dashed
-                      border-white/10 hover:border-pharoic-gold/40 cursor-pointer transition-all
-                      ${uploadingImg ? 'opacity-50 pointer-events-none' : ''}
-                    `}>
+                    <label className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/10 hover:border-pharoic-gold/40 cursor-pointer transition-all ${uploadingImg ? 'opacity-50 pointer-events-none' : ''}`}>
                       {uploadingImg
                         ? <><RefreshCw size={28} className="animate-spin text-pharoic-gold mb-2" /><span className="text-white/30 text-xs tracking-widest uppercase">Uploading...</span></>
                         : <><Upload size={28} className="text-white/20 mb-2" /><span className="text-white/30 text-xs tracking-widest uppercase">Tap to add photos</span><span className="text-white/15 text-[10px] mt-1">You can add multiple</span></>
@@ -390,8 +366,8 @@ const Admin = () => {
                     <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={inp} placeholder="THE ANUBIS TEE" required />
                   </div>
                   <div>
-                    <label className={lbl}>Price ($) *</label>
-                    <input type="number" step="0.01" min="0" value={form.price || ''} onChange={e => setForm({ ...form, price: parseFloat(e.target.value) })} className={inp} placeholder="49.99" required />
+                    <label className={lbl}>Price (EGP) *</label>
+                    <input type="number" step="0.01" min="0" value={form.price || ''} onChange={e => setForm({ ...form, price: parseFloat(e.target.value) })} className={inp} placeholder="499" required />
                   </div>
                 </div>
 
@@ -407,11 +383,72 @@ const Admin = () => {
                   <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={`${inp} h-20 resize-none`} placeholder="Short description (optional)" />
                 </div>
 
+                {/* ── Sizes ── */}
+                <div className="space-y-3">
+                  <label className={lbl}>
+                    Available Sizes
+                    <span className="text-white/20 normal-case font-normal ml-2">— only selected sizes will show</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {ALL_SIZES.map(size => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => toggleSize(size)}
+                        className={`min-w-[48px] px-3 py-2 text-xs font-bold tracking-widest border transition-all ${
+                          selectedSizes.includes(size)
+                            ? 'border-pharoic-gold bg-pharoic-gold text-pharoic-black'
+                            : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedSizes.length === 0 && (
+                    <p className="text-white/20 text-[10px] tracking-widest">No sizes selected — size selector will be hidden</p>
+                  )}
+                </div>
+
+                {/* ── Colours ── */}
+                <div className="space-y-3">
+                  <label className={lbl}>
+                    Available Colours
+                    <span className="text-white/20 normal-case font-normal ml-2">— only selected colours will show</span>
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {ALL_COLOURS.map(colour => (
+                      <button
+                        key={colour}
+                        type="button"
+                        onClick={() => toggleColour(colour)}
+                        title={colour}
+                        className={`relative w-9 h-9 rounded-full border-2 transition-all ${
+                          selectedColours.includes(colour)
+                            ? 'border-pharoic-gold scale-110 shadow-[0_0_0_2px_rgba(212,175,55,0.3)]'
+                            : 'border-white/20 hover:border-white/50'
+                        }`}
+                        style={{ backgroundColor: colourHex[colour] }}
+                      >
+                        {selectedColours.includes(colour) && (
+                          <span className="absolute inset-0 flex items-center justify-center text-pharoic-gold text-xs font-bold">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedColours.length === 0 && (
+                    <p className="text-white/20 text-[10px] tracking-widest">No colours selected — colour selector will be hidden</p>
+                  )}
+                  {selectedColours.length > 0 && (
+                    <p className="text-white/30 text-[10px] tracking-widest">{selectedColours.join(', ')}</p>
+                  )}
+                </div>
+
                 <div className="flex gap-3">
                   <button type="submit" disabled={productImages.length === 0 || uploadingImg} className="btn-primary text-sm font-bold tracking-widest flex items-center gap-2 disabled:opacity-40">
                     <Save size={14} /> {editingId ? 'UPDATE' : 'PUBLISH'}
                   </button>
-                  <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyForm); setProductImages([]); }} className="btn-outline text-sm font-bold tracking-widest">
+                  <button type="button" onClick={resetForm} className="btn-outline text-sm font-bold tracking-widest">
                     CANCEL
                   </button>
                 </div>
@@ -425,10 +462,8 @@ const Admin = () => {
               ) : products.length === 0 ? (
                 <p className="text-white/30 text-sm p-8 text-center">No products yet.</p>
               ) : products.map(p => {
-                // Get first image for thumbnail
                 let thumb = p.image_url;
                 try { const arr = JSON.parse(p.image_url); if (Array.isArray(arr)) thumb = arr[0]; } catch {}
-                // Count images
                 let imgCount = 1;
                 try { const arr = JSON.parse(p.image_url); if (Array.isArray(arr)) imgCount = arr.length; } catch {}
 
@@ -440,7 +475,19 @@ const Admin = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-serif font-bold uppercase tracking-wide truncate">{p.name}</p>
                       <p className="text-white/30 text-xs uppercase tracking-widest mt-0.5">{p.category}</p>
-                      {imgCount > 1 && <p className="text-pharoic-gold/50 text-[10px] mt-0.5">{imgCount} photos</p>}
+                      <div className="flex gap-3 mt-1 flex-wrap">
+                        {imgCount > 1 && <p className="text-pharoic-gold/50 text-[10px]">{imgCount} photos</p>}
+                        {p.sizes?.length > 0 && (
+                          <p className="text-white/25 text-[10px] tracking-widest">{p.sizes.join(' · ')}</p>
+                        )}
+                        {p.colours?.length > 0 && (
+                          <div className="flex gap-1 items-center">
+                            {p.colours.map(c => (
+                              <span key={c} className="w-3 h-3 rounded-full border border-white/20 inline-block" style={{ backgroundColor: colourHex[c] }} title={c} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <p className="text-pharoic-gold font-bold text-lg flex-shrink-0">EGP {p.price}</p>
                     <div className="flex items-center gap-3 flex-shrink-0">

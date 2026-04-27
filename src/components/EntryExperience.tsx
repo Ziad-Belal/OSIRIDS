@@ -49,135 +49,83 @@ const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
           <div className="oe-viewport">
             <div className="oe-door-container">
 
-              {/* ══ LEFT PANEL ══ */}
-              <div className="oe-panel oe-panel-l">
-                <div className="oe-stone-texture" />
-                <div className="oe-stone-erosion" />
-                
-                {/* 3D Chiseled Background Carvings */}
-                <div className="oe-bg-carvings">
-                  <BorderRow glyphs={GLYPHS_A.concat(GLYPHS_B)} n={150} />
-                </div>
-
-                <div className="oe-border-top">
-                  <BorderRow glyphs={GLYPHS_A} n={40} />
-                </div>
-                
-                <div className="oe-middle">
-                  <div className="oe-col-left">
-                    <BorderRow glyphs={GLYPHS_B} n={40} />
+              {/* ══ LEFT HINGE UNIT (rotates as one 3D piece) ══ */}
+              <div className="oe-hinge oe-hinge-l">
+                {/* Front face */}
+                <div className="oe-panel oe-panel-l">
+                  <div className="oe-stone-texture" />
+                  <div className="oe-stone-erosion" />
+                  <div className="oe-bg-carvings">
+                    <BorderRow glyphs={GLYPHS_A.concat(GLYPHS_B)} n={150} />
                   </div>
-                  <div className="oe-col-left oe-col-extra">
-                    <BorderRow glyphs={GLYPHS_D} n={40} />
-                  </div>
-                  
-                  <div className="oe-center-area">
-                    {/* Deep Multi-dimensional frame insets */}
-                    <div className="oe-inner-frame">
-                      <div className="oe-inner-top-row">
-                        <BorderRow glyphs={GLYPHS_C} n={16} />
-                      </div>
-                      <div className="oe-content">
-                        <div className="oe-ankh">☥</div>
-                        <div className="oe-word">OSIR</div>
-                        
-                        <div className="oe-heavy-glyphs">
-                          <BorderRow glyphs={GLYPHS_D} n={24} />
-                        </div>
-                        
-                        <div className="oe-scarab">𓆣</div>
-                        
-                        <div className="oe-heavy-glyphs">
-                          <BorderRow glyphs={GLYPHS_A} n={24} />
-                        </div>
-                      </div>
-                      <div className="oe-inner-bottom-row">
-                        <BorderRow glyphs={GLYPHS_C} n={16} />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="oe-col-right oe-col-extra">
+                  <div className="oe-border-top">
                     <BorderRow glyphs={GLYPHS_A} n={40} />
                   </div>
-                  <div className="oe-col-right">
-                    <BorderRow glyphs={GLYPHS_C} n={40} />
+                  <div className="oe-middle">
+                    <div className="oe-col-left"><BorderRow glyphs={GLYPHS_B} n={40} /></div>
+                    <div className="oe-col-left oe-col-extra"><BorderRow glyphs={GLYPHS_D} n={40} /></div>
+                    <div className="oe-center-area">
+                      <div className="oe-inner-frame">
+                        <div className="oe-inner-top-row"><BorderRow glyphs={GLYPHS_C} n={16} /></div>
+                        <div className="oe-content">
+                          <div className="oe-ankh">☥</div>
+                          <div className="oe-word">OSIR</div>
+                          <div className="oe-heavy-glyphs"><BorderRow glyphs={GLYPHS_D} n={24} /></div>
+                          <div className="oe-scarab">𓆣</div>
+                          <div className="oe-heavy-glyphs"><BorderRow glyphs={GLYPHS_A} n={24} /></div>
+                        </div>
+                        <div className="oe-inner-bottom-row"><BorderRow glyphs={GLYPHS_C} n={16} /></div>
+                      </div>
+                    </div>
+                    <div className="oe-col-right oe-col-extra"><BorderRow glyphs={GLYPHS_A} n={40} /></div>
+                    <div className="oe-col-right"><BorderRow glyphs={GLYPHS_C} n={40} /></div>
                   </div>
+                  <div className="oe-border-bottom"><BorderRow glyphs={GLYPHS_B} n={40} /></div>
+                  <div className="oe-knob oe-knob-r"><span>𓆣</span></div>
+                  <div className="oe-light-bloom-l" />
                 </div>
-                
-                <div className="oe-border-bottom">
-                  <BorderRow glyphs={GLYPHS_B} n={40} />
-                </div>
-                <div className="oe-knob oe-knob-r"><span>𓆣</span></div>
-                
-                <div className="oe-light-bloom-l" />
+                {/* Real 3D stone-slab side-face — inner edge visible when door swings open */}
+                <div className="oe-edge oe-edge-l" />
               </div>
 
               {/* ══ DYNAMIC SEAM ══ */}
               <div className="oe-seam"><div className="oe-seam-glow" /></div>
 
-              {/* ══ RIGHT PANEL ══ */}
-              <div className="oe-panel oe-panel-r">
-                <div className="oe-stone-texture" />
-                <div className="oe-stone-erosion" />
-                
-                {/* 3D Chiseled Background Carvings */}
-                <div className="oe-bg-carvings">
-                  <BorderRow glyphs={GLYPHS_C.concat(GLYPHS_D)} n={150} />
-                </div>
-
-                <div className="oe-border-top">
-                  <BorderRow glyphs={GLYPHS_B} n={40} />
-                </div>
-                
-                <div className="oe-middle">
-                  <div className="oe-col-left">
-                    <BorderRow glyphs={GLYPHS_D} n={40} />
+              {/* ══ RIGHT HINGE UNIT ══ */}
+              <div className="oe-hinge oe-hinge-r">
+                {/* Front face */}
+                <div className="oe-panel oe-panel-r">
+                  <div className="oe-stone-texture" />
+                  <div className="oe-stone-erosion" />
+                  <div className="oe-bg-carvings">
+                    <BorderRow glyphs={GLYPHS_C.concat(GLYPHS_D)} n={150} />
                   </div>
-                  <div className="oe-col-left oe-col-extra">
-                    <BorderRow glyphs={GLYPHS_B} n={40} />
-                  </div>
-                  
-                  <div className="oe-center-area">
-                    {/* Deep Multi-dimensional frame insets */}
-                    <div className="oe-inner-frame">
-                      <div className="oe-inner-top-row">
-                        <BorderRow glyphs={GLYPHS_D} n={16} />
-                      </div>
-                      <div className="oe-content">
-                        <div className="oe-ankh">☥</div>
-                        <div className="oe-word">IDS</div>
-                        
-                        <div className="oe-heavy-glyphs">
-                          <BorderRow glyphs={GLYPHS_C} n={24} />
+                  <div className="oe-border-top"><BorderRow glyphs={GLYPHS_B} n={40} /></div>
+                  <div className="oe-middle">
+                    <div className="oe-col-left"><BorderRow glyphs={GLYPHS_D} n={40} /></div>
+                    <div className="oe-col-left oe-col-extra"><BorderRow glyphs={GLYPHS_B} n={40} /></div>
+                    <div className="oe-center-area">
+                      <div className="oe-inner-frame">
+                        <div className="oe-inner-top-row"><BorderRow glyphs={GLYPHS_D} n={16} /></div>
+                        <div className="oe-content">
+                          <div className="oe-ankh">☥</div>
+                          <div className="oe-word">IDS</div>
+                          <div className="oe-heavy-glyphs"><BorderRow glyphs={GLYPHS_C} n={24} /></div>
+                          <div className="oe-scarab">𓆣</div>
+                          <div className="oe-heavy-glyphs"><BorderRow glyphs={GLYPHS_B} n={24} /></div>
                         </div>
-                        
-                        <div className="oe-scarab">𓆣</div>
-                        
-                        <div className="oe-heavy-glyphs">
-                          <BorderRow glyphs={GLYPHS_B} n={24} />
-                        </div>
-                      </div>
-                      <div className="oe-inner-bottom-row">
-                        <BorderRow glyphs={GLYPHS_D} n={16} />
+                        <div className="oe-inner-bottom-row"><BorderRow glyphs={GLYPHS_D} n={16} /></div>
                       </div>
                     </div>
+                    <div className="oe-col-right oe-col-extra"><BorderRow glyphs={GLYPHS_C} n={40} /></div>
+                    <div className="oe-col-right"><BorderRow glyphs={GLYPHS_A} n={40} /></div>
                   </div>
-                  
-                  <div className="oe-col-right oe-col-extra">
-                    <BorderRow glyphs={GLYPHS_C} n={40} />
-                  </div>
-                  <div className="oe-col-right">
-                    <BorderRow glyphs={GLYPHS_A} n={40} />
-                  </div>
+                  <div className="oe-border-bottom"><BorderRow glyphs={GLYPHS_A} n={40} /></div>
+                  <div className="oe-knob oe-knob-l"><span>𓆣</span></div>
+                  <div className="oe-light-bloom-r" />
                 </div>
-                
-                <div className="oe-border-bottom">
-                  <BorderRow glyphs={GLYPHS_A} n={40} />
-                </div>
-                <div className="oe-knob oe-knob-l"><span>𓆣</span></div>
-
-                <div className="oe-light-bloom-r" />
+                {/* Real 3D stone-slab side-face */}
+                <div className="oe-edge oe-edge-r" />
               </div>
 
             </div>
@@ -263,14 +211,14 @@ const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
         .oe-viewport {
           position: relative; width: 100%; height: 100%;
           display: flex; align-items: center; justify-content: center;
-          perspective: 1400px; transform-style: preserve-3d;
+          perspective: 900px;
+          perspective-origin: 50% 50%;
         }
 
         .oe-door-container {
           position: relative; display: flex;
           width: 100vw; height: 100vh;
           transform-style: preserve-3d;
-          box-shadow: 0 50px 150px rgba(0, 0, 0, 0.98);
           animation: cameraCreep 3.5s cubic-bezier(0.1, 0.1, 0.2, 1) forwards;
         }
         @keyframes cameraCreep {
@@ -278,19 +226,78 @@ const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
           100% { transform: scale(1) translateZ(0px); }
         }
 
-        /* HEAVY, MULTI-LAYERED RECESSED STONE DOOR */
-        .oe-panel {
+        /* ══ HINGE UNIT — the 3D rotating shell for each door half ══ */
+        .oe-hinge {
           flex: 1; height: 100%;
-          display: flex; flex-direction: column;
-          background: #0d0a06; position: relative;
+          position: relative;
+          transform-style: preserve-3d;
           transition: transform 2.5s cubic-bezier(0.65, 0, 0.15, 1);
-          overflow: hidden; transform-style: preserve-3d;
-          /* Multi-dimensional ambient occlusion layered onto the master slabs */
+        }
+        .oe-hinge-l { transform-origin: left center; }
+        .oe-hinge-r { transform-origin: right center; }
+
+        /* Rotate the whole hinge unit — front face + edge face swing together */
+        .oe-open .oe-hinge-l,
+        .oe-zoom .oe-hinge-l { transform: rotateY(-88deg); }
+        .oe-open .oe-hinge-r,
+        .oe-zoom .oe-hinge-r { transform: rotateY(88deg); }
+
+        /* ── FRONT FACE (fills the hinge) ── */
+        .oe-panel {
+          position: absolute; inset: 0;
+          display: flex; flex-direction: column;
+          background: #0d0a06;
+          overflow: hidden;
           box-shadow: 
             inset 0 0 100px rgba(0,0,0,1),
             inset 0 0 40px rgba(0,0,0,0.8),
             inset -5px 0 15px rgba(0,0,0,0.7),
             inset 5px 0 15px rgba(255,255,255,0.03);
+        }
+
+        /* ══ REAL 3D STONE SLAB SIDE FACES ══
+           The edge div lives in the same transform-style:preserve-3d container as the front face.
+           It is translated to the hinge edge then rotated 90° to stand perpendicular. */
+        .oe-edge {
+          position: absolute;
+          top: 0; height: 100%;
+          width: 70px;                 /* stone thickness */
+          background:
+            linear-gradient(to bottom,
+              rgba(255,215,90,0.07) 0%,
+              transparent 8%,
+              transparent 92%,
+              rgba(0,0,0,0.5) 100%
+            ),
+            linear-gradient(to right, #2e2010 0%, #1a1008 30%, #0c0906 70%, #070504 100%);
+          /* Horizontal strata cracks */
+          background-image:
+            repeating-linear-gradient(
+              to bottom,
+              transparent 0px, transparent 34px,
+              rgba(0,0,0,0.25) 34px, rgba(0,0,0,0.25) 35px,
+              transparent 35px, transparent 68px,
+              rgba(255,255,255,0.02) 68px, rgba(255,255,255,0.02) 69px
+            );
+          box-shadow:
+            inset -8px 0 20px rgba(0,0,0,0.9),
+            inset 3px 0 10px rgba(255,200,80,0.04),
+            inset 0 0 40px rgba(0,0,0,0.7);
+        }
+
+        /* LEFT door: edge is at the RIGHT side of the panel (inner face, hinge side toward center) */
+        .oe-edge-l {
+          /* Position at the right edge of the hinge, pivot around that edge */
+          right: 0;
+          transform-origin: right center;
+          transform: rotateY(-90deg);
+        }
+
+        /* RIGHT door: edge is at the LEFT side of the panel */
+        .oe-edge-r {
+          left: 0;
+          transform-origin: left center;
+          transform: rotateY(90deg);
         }
 
         /* Deep, chaotic chiseled rock texturing */
@@ -309,11 +316,8 @@ const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
           mix-blend-mode: overlay; pointer-events: none;
         }
 
-        .oe-panel-l { transform-origin: left center; border-right: 2px solid rgba(0,0,0,1); }
-        .oe-panel-r { transform-origin: right center; border-left: 1px solid rgba(255,255,255,0.01); }
-
-        .oe-open .oe-panel-l, .oe-zoom .oe-panel-l { transform: rotateY(-93deg) translateZ(15px); }
-        .oe-open .oe-panel-r, .oe-zoom .oe-panel-r { transform: rotateY(93deg) translateZ(15px); }
+        .oe-panel-l { border-right: 2px solid rgba(0,0,0,1); }
+        .oe-panel-r { border-left: 1px solid rgba(255,255,255,0.01); }
 
         .oe-light-bloom-l, .oe-light-bloom-r {
           position: absolute; inset: 0; pointer-events: none;
@@ -491,7 +495,7 @@ const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
         /* ── FORGED DOOR KNOBS ── */
         .oe-knob {
           position: absolute; top: 50%;
-          transform: translateY(-50%) translateZ(25px); z-index: 10;
+          transform: translateY(-50%); z-index: 10;
         }
         .oe-knob-r { right: clamp(10px, 1.5vw, 25px); }
         .oe-knob-l { left:  clamp(10px, 1.5vw, 25px); }
@@ -502,7 +506,7 @@ const EntryExperience = ({ onComplete }: EntryExperienceProps) => {
           border-radius: 50%;
           background: radial-gradient(circle at 30% 30%, #ffffff 0%, #ffd452 20%, #705202 60%, #0d0a03 100%);
           box-shadow: 
-            0 15px(35px) rgba(0,0,0,1),
+            0 15px 35px rgba(0,0,0,1),
             inset 0 2px 3px rgba(255,255,255,0.7),
             inset 0 -5px 10px rgba(0,0,0,1);
           font-size: clamp(10px, 1.3vw, 15px); color: #0a0701;

@@ -3,17 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCart } from '../context/CartContext';
-import { Product } from '../context/CartContext';
+import { Product, SHIPPING_COST } from '../context/CartContext';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeImg, setActiveImg] = useState(0);
-  const [added, setAdded] = useState(false);
+  const [product, setProduct]       = useState<Product | null>(null);
+  const [loading, setLoading]       = useState(true);
+  const [activeImg, setActiveImg]   = useState(0);
+  const [added, setAdded]           = useState(false);
+  const [selectedSize, setSelectedSize]     = useState<string | undefined>(undefined);
+  const [selectedColour, setSelectedColour] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!id) return;
@@ -30,14 +32,14 @@ const ProductDetail = () => {
 
   const handleAdd = () => {
     if (!product) return;
-    addToCart(product);
+    addToCart(product, selectedSize, selectedColour);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    addToCart(product);
+    addToCart(product, selectedSize, selectedColour);
     navigate('/cart?checkout=true');
   };
 
@@ -68,6 +70,21 @@ const ProductDetail = () => {
   const prev = () => setActiveImg(i => (i - 1 + images.length) % images.length);
   const next = () => setActiveImg(i => (i + 1) % images.length);
 
+  const hasSizes   = product.sizes   && product.sizes.length   > 0;
+  const hasColours = product.colours && product.colours.length > 0;
+
+  // Colour hex map for swatches
+  const colourHex: Record<string, string> = {
+    Black:    '#0A0A0A',
+    White:    '#F5F5F5',
+    Beige:    '#E8D5B7',
+    Navy:     '#001F5B',
+    Olive:    '#556B2F',
+    Camel:    '#C19A6B',
+    Charcoal: '#36454F',
+    Burgundy: '#800020',
+  };
+
   return (
     <div className="py-10 animate-fade-in">
 
@@ -83,7 +100,6 @@ const ProductDetail = () => {
 
         {/* ── Images ── */}
         <div className="space-y-4">
-          {/* Main image */}
           <div className="relative aspect-[3/4] overflow-hidden bg-zinc-900 rounded-sm">
             {images.length > 0 ? (
               <img
@@ -94,35 +110,27 @@ const ProductDetail = () => {
             ) : (
               <div className="w-full h-full flex items-center justify-center text-white/10 text-6xl">𓃭</div>
             )}
-
-            {/* Arrows — only if multiple images */}
             {images.length > 1 && (
               <>
-                <button
-                  onClick={prev}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-pharoic-gold hover:text-pharoic-black text-white p-2 transition-all"
-                >
+                <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-pharoic-gold hover:text-pharoic-black text-white p-2 transition-all">
                   <ChevronLeft size={18} />
                 </button>
-                <button
-                  onClick={next}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-pharoic-gold hover:text-pharoic-black text-white p-2 transition-all"
-                >
+                <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-pharoic-gold hover:text-pharoic-black text-white p-2 transition-all">
                   <ChevronRight size={18} />
                 </button>
               </>
             )}
           </div>
 
-          {/* Thumbnail strip */}
           {images.length > 1 && (
             <div className="flex gap-3 overflow-x-auto pb-1">
               {images.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveImg(i)}
-                  className={`flex-shrink-0 w-20 aspect-[3/4] overflow-hidden border-2 transition-all ${activeImg === i ? 'border-pharoic-gold' : 'border-transparent opacity-50 hover:opacity-80'
-                    }`}
+                  className={`flex-shrink-0 w-20 aspect-[3/4] overflow-hidden border-2 transition-all ${
+                    activeImg === i ? 'border-pharoic-gold' : 'border-transparent opacity-50 hover:opacity-80'
+                  }`}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
@@ -147,18 +155,71 @@ const ProductDetail = () => {
             <p className="text-white/50 text-sm leading-relaxed">{product.description}</p>
           )}
 
+          {/* ── Size selector ── */}
+          {hasSizes && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-pharoic-gold tracking-widest uppercase">Size</p>
+                {selectedSize
+                  ? <span className="text-white text-xs font-bold tracking-widest">{selectedSize}</span>
+                  : <span className="text-white/20 text-xs tracking-widest">None selected</span>
+                }
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes!.map(size => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(prev => prev === size ? undefined : size)}
+                    className={`min-w-[48px] px-3 py-2 text-xs font-bold tracking-widest border transition-all ${
+                      selectedSize === size
+                        ? 'border-pharoic-gold bg-pharoic-gold text-pharoic-black'
+                        : 'border-white/20 text-white/60 hover:border-white/50 hover:text-white'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Colour selector ── */}
+          {hasColours && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-pharoic-gold tracking-widest uppercase">Colour</p>
+                {selectedColour
+                  ? <span className="text-white text-xs font-bold tracking-widest">{selectedColour}</span>
+                  : <span className="text-white/20 text-xs tracking-widest">None selected</span>
+                }
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {product.colours!.map(colour => (
+                  <button
+                    key={colour}
+                    onClick={() => setSelectedColour(prev => prev === colour ? undefined : colour)}
+                    title={colour}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      selectedColour === colour
+                        ? 'border-pharoic-gold scale-110 shadow-[0_0_0_2px_rgba(212,175,55,0.3)]'
+                        : 'border-white/20 hover:border-white/60'
+                    }`}
+                    style={{ backgroundColor: colourHex[colour] ?? '#888' }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Actions ── */}
           <div className="space-y-3">
             <button
               onClick={handleAdd}
-              className={`w-full py-5 font-bold tracking-[0.2em] text-sm flex items-center justify-center gap-3 transition-all ${added
-                  ? 'bg-white text-pharoic-black'
-                  : 'btn-primary'
-                }`}
+              className={`w-full py-5 font-bold tracking-[0.2em] text-sm flex items-center justify-center gap-3 transition-all ${
+                added ? 'bg-white text-pharoic-black' : 'btn-primary'
+              }`}
             >
-              {added
-                ? <>✓ ADDED TO BAG</>
-                : <><ShoppingBag size={18} /> ADD TO BAG</>
-              }
+              {added ? <>✓ ADDED TO BAG</> : <><ShoppingBag size={18} /> ADD TO BAG</>}
             </button>
             <button
               onClick={handleBuyNow}
@@ -168,10 +229,14 @@ const ProductDetail = () => {
             </button>
           </div>
 
+          {/* ── Delivery ── */}
           <div className="border border-white/5 p-6 space-y-3">
             <p className="text-[10px] font-bold text-pharoic-gold tracking-widest uppercase">Delivery</p>
             <p className="text-white/40 text-xs leading-relaxed">
               Orders are delivered within 3–7 business days. Payment collected upon delivery.
+            </p>
+            <p className="text-white/30 text-xs">
+              Shipping: <span className="text-pharoic-gold font-bold">EGP {SHIPPING_COST}</span>
             </p>
           </div>
         </div>
